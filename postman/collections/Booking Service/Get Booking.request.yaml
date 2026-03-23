@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Booking
+method: GET
+url: '{{baseUrl}}/bookings/{{bookingRef}}'
+order: 3000

@@ -1,0 +1,16 @@
+$kind: http-request
+name: Process Payment
+method: POST
+url: '{{baseUrl}}/payments'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "amount": 45,
+      "currency": "GBP",
+      "bookingRef": "BR-TEST0001"
+    }

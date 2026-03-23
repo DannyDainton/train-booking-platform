@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "Schedule Service Mock",
+  "protocol": "http",
+  "port": 4501,
+  "mockSrc": "./schedule-mock.js",
+  "autoRestartOnChange": true,
+  "logging": {
+    "level": "verbose",
+    "showBody": true
+  }
+}

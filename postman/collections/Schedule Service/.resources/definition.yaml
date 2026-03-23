@@ -1,0 +1,8 @@
+$kind: collection
+name: Schedule Service
+description: Manages train schedules, timetable lookups, and route information for the train booking platform.
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3001'
+  - key: trainId
+    value: T200

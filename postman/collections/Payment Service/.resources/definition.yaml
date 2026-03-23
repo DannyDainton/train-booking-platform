@@ -1,0 +1,8 @@
+$kind: collection
+name: Payment Service
+description: Processes payments and retrieves transaction details for the train booking platform.
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3002'
+  - key: transactionId
+    value: TXN-001

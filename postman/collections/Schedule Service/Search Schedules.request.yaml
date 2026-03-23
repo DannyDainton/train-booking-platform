@@ -1,0 +1,10 @@
+$kind: http-request
+name: Search Schedules
+method: GET
+url: '{{baseUrl}}/schedules'
+order: 1000
+queryParams:
+  - key: from
+    value: London
+  - key: to
+    value: Edinburgh

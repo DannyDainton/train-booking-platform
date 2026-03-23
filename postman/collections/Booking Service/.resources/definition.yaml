@@ -1,0 +1,8 @@
+$kind: collection
+name: Booking Service
+description: Handles train search, booking creation, and booking retrieval for the train booking platform.
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3000'
+  - key: bookingRef
+    value: BR-TEST0001
