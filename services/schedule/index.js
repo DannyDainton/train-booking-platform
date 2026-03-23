@@ -1,7 +1,7 @@
+const { schedulePort, scheduleServiceUrl } = require('../../config/endpoints');
 const express = require('express');
 
 const app = express();
-const PORT = process.env.SCHEDULE_PORT || 3001;
 
 // --- Hardcoded timetable data ---
 
@@ -119,6 +119,6 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'schedule' });
 });
 
-app.listen(PORT, () => {
-  console.log(`[Schedule Service] running on http://localhost:${PORT}`);
+app.listen(schedulePort, () => {
+  console.log(`[Schedule Service] ${scheduleServiceUrl}`);
 });

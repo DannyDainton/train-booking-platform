@@ -1,9 +1,26 @@
 const express = require('express');
 const crypto = require('crypto');
 const config = require('./config');
+const { log } = require('./logger');
 
 const app = express();
 app.use(express.json());
+
+app.use((req, res, next) => {
+  if (req.path === '/health') {
+    return next();
+  }
+  const started = Date.now();
+  res.on('finish', () => {
+    log('info', 'request', {
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      ms: Date.now() - started,
+    });
+  });
+  next();
+});
 
 // In-memory bookings store
 const bookings = new Map();
@@ -15,6 +32,7 @@ app.get('/search', async (req, res) => {
   const { from, to, date } = req.query;
 
   if (!from || !to) {
+    log('warn', 'search rejected: missing from or to');
     return res.status(400).json({ error: 'Both "from" and "to" query parameters are required' });
   }
 
@@ -27,6 +45,11 @@ app.get('/search', async (req, res) => {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
+      log('warn', 'schedule service returned error', {
+        status: response.status,
+        from,
+        to,
+      });
       return res.status(response.status).json({
         error: 'Failed to fetch schedules',
         details: body
@@ -34,8 +57,16 @@ app.get('/search', async (req, res) => {
     }
 
     const data = await response.json();
+    let resultCount = null;
+    if (Array.isArray(data)) {
+      resultCount = data.length;
+    } else if (data && typeof data.count === 'number') {
+      resultCount = data.count;
+    }
+    log('info', 'search ok', { from, to, resultCount });
     res.json(data);
   } catch (err) {
+    log('error', 'schedule service unreachable', { message: err.message, from, to });
     res.status(502).json({
       error: 'Schedule Service is unavailable',
       message: err.message
@@ -48,17 +79,27 @@ app.post('/bookings', async (req, res) => {
   const { trainId, passengers } = req.body;
 
   if (!trainId || !Array.isArray(passengers) || passengers.length === 0) {
+    log('warn', 'create booking rejected: invalid body');
     return res.status(400).json({
       error: '"trainId" and a non-empty "passengers" array are required'
     });
   }
 
+  let failedDependency = 'schedule';
   try {
     // 1. Validate the train exists via Schedule Service
-    const trainRes = await fetch(`${config.scheduleServiceUrl}/schedules/${encodeURIComponent(trainId)}`);
+    const scheduleTrainUrl = `${config.scheduleServiceUrl}/schedules/${encodeURIComponent(trainId)}`;
+    log('info', 'calling schedule service', {
+      reason: 'validate train for booking',
+      method: 'GET',
+      url: scheduleTrainUrl,
+      trainId,
+    });
+    const trainRes = await fetch(scheduleTrainUrl);
 
     if (!trainRes.ok) {
       const body = await trainRes.json().catch(() => ({}));
+      log('warn', 'train lookup failed', { trainId, status: trainRes.status });
       return res.status(trainRes.status).json({
         error: `Train "${trainId}" not found`,
         details: body
@@ -66,12 +107,27 @@ app.post('/bookings', async (req, res) => {
     }
 
     const train = await trainRes.json();
+    log('info', 'schedule service responded', {
+      trainId,
+      httpStatus: trainRes.status,
+    });
+
+    failedDependency = 'payment';
 
     // 2. Process payment via Payment Service
     const bookingRef = `BR-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const totalAmount = train.price * passengers.length;
 
-    const paymentRes = await fetch(`${config.paymentServiceUrl}/payments`, {
+    const paymentUrl = `${config.paymentServiceUrl}/payments`;
+    log('info', 'calling payment service', {
+      reason: 'process payment for booking',
+      method: 'POST',
+      url: paymentUrl,
+      bookingRef,
+      amount: totalAmount,
+      currency: 'GBP',
+    });
+    const paymentRes = await fetch(paymentUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -83,6 +139,10 @@ app.post('/bookings', async (req, res) => {
 
     if (!paymentRes.ok) {
       const body = await paymentRes.json().catch(() => ({}));
+      log('warn', 'payment failed', {
+        bookingRef,
+        status: paymentRes.status,
+      });
       return res.status(paymentRes.status).json({
         error: 'Payment failed',
         details: body
@@ -90,6 +150,11 @@ app.post('/bookings', async (req, res) => {
     }
 
     const payment = await paymentRes.json();
+    log('info', 'payment service responded', {
+      bookingRef,
+      httpStatus: paymentRes.status,
+      transactionId: payment.transactionId,
+    });
 
     // 3. Store the booking
     const booking = {
@@ -116,11 +181,25 @@ app.post('/bookings', async (req, res) => {
 
     bookings.set(bookingRef, booking);
 
+    log('info', 'booking created', {
+      bookingRef,
+      trainId,
+      passengerCount: passengers.length,
+      totalAmount,
+    });
     res.status(201).json(booking);
   } catch (err) {
+    const service =
+      failedDependency === 'schedule' ? 'Schedule' : 'Payment';
+    log('error', 'create booking failed', {
+      message: err.message,
+      trainId,
+      unavailableService: failedDependency,
+    });
     res.status(502).json({
-      error: 'A dependent service is unavailable',
-      message: err.message
+      error: `${service} service is unavailable`,
+      service: failedDependency,
+      message: err.message,
     });
   }
 });
@@ -130,6 +209,7 @@ app.get('/bookings/:bookingRef', (req, res) => {
   const booking = bookings.get(req.params.bookingRef);
 
   if (!booking) {
+    log('warn', 'booking not found', { bookingRef: req.params.bookingRef });
     return res.status(404).json({ error: `Booking "${req.params.bookingRef}" not found` });
   }
 
@@ -142,7 +222,5 @@ app.get('/health', (_req, res) => {
 });
 
 app.listen(config.bookingPort, () => {
-  console.log(`[Booking Service] running on http://localhost:${config.bookingPort}`);
-  console.log(`  -> Schedule Service: ${config.scheduleServiceUrl}`);
-  console.log(`  -> Payment Service:  ${config.paymentServiceUrl}`);
+  log('info', 'listening', { url: config.bookingServiceUrl });
 });

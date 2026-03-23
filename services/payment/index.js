@@ -1,10 +1,9 @@
+const { paymentPort, paymentServiceUrl } = require('../../config/endpoints');
 const express = require('express');
 const crypto = require('crypto');
 
 const app = express();
 app.use(express.json());
-
-const PORT = process.env.PAYMENT_PORT || 3002;
 
 // In-memory payment records
 const payments = new Map();
@@ -55,6 +54,6 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'payment' });
 });
 
-app.listen(PORT, () => {
-  console.log(`[Payment Service] running on http://localhost:${PORT}`);
+app.listen(paymentPort, () => {
+  console.log(`[Payment Service] ${paymentServiceUrl}`);
 });
