@@ -1,22 +1,21 @@
 $kind: http-request
 name: Create Booking
 method: POST
-url: '{{baseUrl}}/bookings'
+url: "{{baseUrl}}/bookings"
 order: 2000
 headers:
-  - key: Content-Type
-    value: application/json
+  Content-Type: application/json
 body:
   type: json
   content: |-
     {
-      "trainId": "T100",
-      "passengers": [
-        {
-          "name": "Alice Smith"
-        },
-        {
-          "name": "Bob Jones"
-        }
-      ]
+        "trainId": "T100",
+        "passengers": [
+            {
+                "name": "Alice Smith"
+            },
+            {
+                "name": "Bob Jones"
+            }
+        ]
     }
