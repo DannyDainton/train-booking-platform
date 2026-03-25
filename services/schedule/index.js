@@ -115,7 +115,7 @@ app.get('/schedules/:trainId', (req, res) => {
 });
 
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/ping', (_req, res) => {
   res.json({ status: 'ok', service: 'schedule' });
 });
 

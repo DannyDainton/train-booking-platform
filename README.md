@@ -107,7 +107,7 @@ curl -X POST http://localhost:3002/payments \
 ### Health checks
 
 ```bash
-curl http://localhost:3000/health
-curl http://localhost:3001/health
-curl http://localhost:3002/health
+curl http://localhost:3000/ping
+curl http://localhost:3001/ping
+curl http://localhost:3002/ping
 ```

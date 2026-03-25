@@ -50,7 +50,7 @@ app.get('/payments/:transactionId', (req, res) => {
 });
 
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/ping', (_req, res) => {
   res.json({ status: 'ok', service: 'payment' });
 });
 

@@ -9,8 +9,8 @@ const server = http.createServer((req, res) => {
   const pathname = parsedUrl.pathname;
   const method = req.method;
 
-  // @endpoint GET /health
-  if (method === "GET" && pathname === "/health") {
+  // @endpoint GET /ping
+  if (method === "GET" && pathname === "/ping") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ status: "ok", service: "payment-mock" }));
     return;
