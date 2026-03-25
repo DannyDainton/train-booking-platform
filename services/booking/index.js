@@ -7,7 +7,7 @@ const app = express();
 app.use(express.json());
 
 app.use((req, res, next) => {
-  if (req.path === '/health') {
+  if (req.path === '/ping') {
     return next();
   }
   const started = Date.now();
@@ -217,7 +217,7 @@ app.get('/bookings/:bookingRef', (req, res) => {
 });
 
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/ping', (_req, res) => {
   res.json({ status: 'ok', service: 'booking' });
 });
 
