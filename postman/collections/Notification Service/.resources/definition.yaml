@@ -1,0 +1,4 @@
+$kind: collection
+name: Notification Service
+variables:
+  baseUrl: http://localhost:3003

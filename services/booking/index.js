@@ -187,6 +187,15 @@ app.post('/bookings', async (req, res) => {
       passengerCount: passengers.length,
       totalAmount,
     });
+
+    // 4. Send booking confirmation notification (fire-and-forget)
+    sendNotification(booking).catch((err) => {
+      log('warn', 'notification failed (non-blocking)', {
+        bookingRef,
+        message: err.message,
+      });
+    });
+
     res.status(201).json(booking);
   } catch (err) {
     const service =
@@ -220,6 +229,56 @@ app.get('/bookings/:bookingRef', (req, res) => {
 app.get('/ping', (_req, res) => {
   res.json({ status: 'ok', service: 'booking' });
 });
+
+/**
+ * Fire-and-forget helper — sends a booking confirmation to the Notification Service.
+ * Failures are logged but never block the booking response.
+ */
+async function sendNotification(booking) {
+  const notificationUrl = `${config.notificationServiceUrl}/notifications`;
+  const payload = {
+    type: 'booking_confirmation',
+    recipient: booking.passengers[0].name,
+    bookingRef: booking.bookingRef,
+    details: {
+      train: booking.train,
+      passengers: booking.passengers,
+      totalAmount: booking.totalAmount,
+      currency: booking.currency,
+      paymentTransactionId: booking.payment.transactionId,
+    },
+  };
+
+  log('info', 'calling notification service', {
+    reason: 'send booking confirmation',
+    method: 'POST',
+    url: notificationUrl,
+    bookingRef: booking.bookingRef,
+  });
+
+  const notifRes = await fetch(notificationUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!notifRes.ok) {
+    const body = await notifRes.json().catch(() => ({}));
+    log('warn', 'notification service returned error', {
+      bookingRef: booking.bookingRef,
+      status: notifRes.status,
+      details: body,
+    });
+    return;
+  }
+
+  const notif = await notifRes.json();
+  log('info', 'notification service responded', {
+    bookingRef: booking.bookingRef,
+    notificationId: notif.notificationId,
+    httpStatus: notifRes.status,
+  });
+}
 
 app.listen(config.bookingPort, () => {
   log('info', 'listening', { url: config.bookingServiceUrl });

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "Notification Service Mock",
+  "protocol": "http",
+  "port": 4503,
+  "mockSrc": "./notification-mock.js",
+  "autoRestartOnChange": true,
+  "logging": {
+    "level": "verbose",
+    "showBody": true
+  }
+}

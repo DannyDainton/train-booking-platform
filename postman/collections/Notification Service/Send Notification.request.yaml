@@ -1,0 +1,32 @@
+$kind: http-request
+name: Send Notification
+method: POST
+url: '{{baseUrl}}/notifications'
+order: 1000
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "type": "booking_confirmation",
+        "recipient": "Alice Smith",
+        "bookingRef": "BR-TEST0001",
+        "details": {
+            "train": {
+                "trainId": "T100",
+                "operator": "Northern Rail",
+                "from": "London Euston",
+                "to": "Manchester Piccadilly",
+                "date": "2026-04-01",
+                "departure": "08:15",
+                "arrival": "10:25"
+            },
+            "passengers": [
+                { "name": "Alice Smith" },
+                { "name": "Bob Jones" }
+            ],
+            "totalAmount": 90,
+            "currency": "GBP"
+        }
+    }
