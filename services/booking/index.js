@@ -76,12 +76,19 @@ app.get('/search', async (req, res) => {
 
 // Create a booking
 app.post('/bookings', async (req, res) => {
-  const { trainId, passengers } = req.body;
+  const { trainId, passengers, seatClass = 'standard' } = req.body;
 
   if (!trainId || !Array.isArray(passengers) || passengers.length === 0) {
     log('warn', 'create booking rejected: invalid body');
     return res.status(400).json({
       error: '"trainId" and a non-empty "passengers" array are required'
+    });
+  }
+
+  if (seatClass !== 'standard' && seatClass !== 'first') {
+    log('warn', 'create booking rejected: invalid seatClass', { seatClass });
+    return res.status(400).json({
+      error: '"seatClass" must be "standard" or "first"'
     });
   }
 
@@ -112,11 +119,37 @@ app.post('/bookings', async (req, res) => {
       httpStatus: trainRes.status,
     });
 
+    // 1b. Assign seats for each passenger
+    const seatAssignments = [];
+    for (const passenger of passengers) {
+      const assignUrl = `${config.scheduleServiceUrl}/schedules/${encodeURIComponent(trainId)}/assign-seat`;
+      const seatRes = await fetch(assignUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seatClass })
+      });
+      if (!seatRes.ok) {
+        const body = await seatRes.json().catch(() => ({}));
+        log('warn', 'seat assignment failed', { trainId, passenger: passenger.name });
+        return res.status(seatRes.status).json({
+          error: 'Seat assignment failed',
+          details: body
+        });
+      }
+      const seatData = await seatRes.json();
+      seatAssignments.push({
+        passenger: passenger.name,
+        seatClass: seatData.seatClass,
+        seat: seatData.seat,
+        price: seatData.price
+      });
+    }
+
     failedDependency = 'payment';
 
     // 2. Process payment via Payment Service
     const bookingRef = `BR-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-    const totalAmount = train.price * passengers.length;
+    const totalAmount = seatAssignments.reduce((sum, s) => sum + s.price, 0);
 
     const paymentUrl = `${config.paymentServiceUrl}/payments`;
     log('info', 'calling payment service', {
@@ -169,7 +202,8 @@ app.post('/bookings', async (req, res) => {
         departure: train.departure,
         arrival: train.arrival
       },
-      passengers,
+      seatClass,
+      passengers: seatAssignments,
       totalAmount,
       currency: 'GBP',
       payment: {
@@ -184,6 +218,7 @@ app.post('/bookings', async (req, res) => {
     log('info', 'booking created', {
       bookingRef,
       trainId,
+      seatClass,
       passengerCount: passengers.length,
       totalAmount,
     });
@@ -238,7 +273,7 @@ async function sendNotification(booking) {
   const notificationUrl = `${config.notificationServiceUrl}/notifications`;
   const payload = {
     type: 'booking_confirmation',
-    recipient: booking.passengers[0].name,
+    recipient: booking.passengers[0].passenger,
     bookingRef: booking.bookingRef,
     details: {
       train: booking.train,
