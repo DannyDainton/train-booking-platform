@@ -1,7 +1,7 @@
 $kind: http-request
 name: Create Booking
 method: POST
-url: "{{baseUrl}}/bookings"
+url: '{{baseUrl}}/bookings'
 order: 2000
 headers:
   Content-Type: application/json
@@ -10,6 +10,7 @@ body:
   content: |-
     {
         "trainId": "T100",
+        "seatClass": "first",
         "passengers": [
             {
                 "name": "Alice Smith"

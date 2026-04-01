@@ -2,6 +2,7 @@ const { schedulePort, scheduleServiceUrl } = require('../../config/endpoints');
 const express = require('express');
 
 const app = express();
+app.use(express.json());
 
 // --- Hardcoded timetable data ---
 
@@ -16,7 +17,11 @@ const timetable = [
     arrival: '10:25',
     duration: '2h 10m',
     price: 45.00,
-    seatsAvailable: 142
+    seatsAvailable: 142,
+    seats: {
+      standard: { available: 100, price: 45.00 },
+      firstClass: { available: 42, price: 54.00 }
+    }
   },
   {
     trainId: 'T101',
@@ -28,7 +33,11 @@ const timetable = [
     arrival: '12:45',
     duration: '2h 15m',
     price: 38.50,
-    seatsAvailable: 89
+    seatsAvailable: 89,
+    seats: {
+      standard: { available: 60, price: 38.50 },
+      firstClass: { available: 29, price: 46.20 }
+    }
   },
   {
     trainId: 'T102',
@@ -40,7 +49,11 @@ const timetable = [
     arrival: '16:05',
     duration: '2h 05m',
     price: 62.00,
-    seatsAvailable: 210
+    seatsAvailable: 210,
+    seats: {
+      standard: { available: 150, price: 62.00 },
+      firstClass: { available: 60, price: 74.40 }
+    }
   },
   {
     trainId: 'T200',
@@ -52,7 +65,11 @@ const timetable = [
     arrival: '13:30',
     duration: '4h 30m',
     price: 88.00,
-    seatsAvailable: 55
+    seatsAvailable: 55,
+    seats: {
+      standard: { available: 35, price: 88.00 },
+      firstClass: { available: 20, price: 105.60 }
+    }
   },
   {
     trainId: 'T201',
@@ -64,7 +81,11 @@ const timetable = [
     arrival: '13:30',
     duration: '4h 30m',
     price: 78.00,
-    seatsAvailable: 102
+    seatsAvailable: 102,
+    seats: {
+      standard: { available: 72, price: 78.00 },
+      firstClass: { available: 30, price: 93.60 }
+    }
   },
   {
     trainId: 'T300',
@@ -76,18 +97,39 @@ const timetable = [
     arrival: '12:45',
     duration: '1h 45m',
     price: 32.00,
-    seatsAvailable: 175
+    seatsAvailable: 175,
+    seats: {
+      standard: { available: 130, price: 32.00 },
+      firstClass: { available: 45, price: 38.40 }
+    }
   }
 ];
+
+// --- Helper: assign a seat ---
+
+function assignSeat(seatClass) {
+  if (seatClass === 'first') {
+    const coach = ['E', 'F'][Math.floor(Math.random() * 2)];
+    const seat = Math.floor(Math.random() * 30) + 1;
+    return `${coach}-${seat}`;
+  }
+  const coach = ['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)];
+  const seat = Math.floor(Math.random() * 60) + 1;
+  return `${coach}-${seat}`;
+}
 
 // --- Routes ---
 
 // Search schedules by origin, destination, and optional date
 app.get('/schedules', (req, res) => {
-  const { from, to, date } = req.query;
+  const { from, to, date, seatClass } = req.query;
 
   if (!from || !to) {
     return res.status(400).json({ error: 'Both "from" and "to" query parameters are required' });
+  }
+
+  if (seatClass && seatClass !== 'standard' && seatClass !== 'first') {
+    return res.status(400).json({ error: '"seatClass" must be "standard" or "first"' });
   }
 
   const fromNorm = from.toLowerCase();
@@ -97,7 +139,12 @@ app.get('/schedules', (req, res) => {
     const matchFrom = train.from.toLowerCase().includes(fromNorm);
     const matchTo = train.to.toLowerCase().includes(toNorm);
     const matchDate = date ? train.date === date : true;
-    return matchFrom && matchTo && matchDate;
+    const matchSeatClass = seatClass
+      ? seatClass === 'first'
+        ? train.seats.firstClass.available > 0
+        : train.seats.standard.available > 0
+      : true;
+    return matchFrom && matchTo && matchDate && matchSeatClass;
   });
 
   res.json({ count: results.length, results });
@@ -112,6 +159,31 @@ app.get('/schedules/:trainId', (req, res) => {
   }
 
   res.json(train);
+});
+
+// Assign a seat on a train
+app.post('/schedules/:trainId/assign-seat', (req, res) => {
+  const train = timetable.find((t) => t.trainId === req.params.trainId);
+
+  if (!train) {
+    return res.status(404).json({ error: `Train "${req.params.trainId}" not found` });
+  }
+
+  const { seatClass } = req.body;
+
+  if (!seatClass || (seatClass !== 'standard' && seatClass !== 'first')) {
+    return res.status(400).json({ error: '"seatClass" must be "standard" or "first"' });
+  }
+
+  const seatInfo = seatClass === 'first' ? train.seats.firstClass : train.seats.standard;
+  const seat = assignSeat(seatClass);
+
+  res.json({
+    trainId: train.trainId,
+    seatClass,
+    seat,
+    price: seatInfo.price
+  });
 });
 
 // Health check
