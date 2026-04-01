@@ -1,0 +1,13 @@
+{
+  "id": "e9e78a13-8080-4ac0-85bf-47733fbd69b5",
+  "version": 1,
+  "name": "Notification Service",
+  "protocol": "http",
+  "port": 4500,
+  "mockSrc": "./mock.js",
+  "autoRestartOnChange": true,
+  "logging": {
+    "level": "verbose",
+    "showBody": true
+  }
+}

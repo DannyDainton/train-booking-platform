@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_postman_postman__getAuthenticatedUser",
+      "mcp__plugin_postman_postman__getWorkspaces",
+      "mcp__plugin_postman_postman__getAllSpecs"
+    ]
+  }
+}
