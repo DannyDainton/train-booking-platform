@@ -1,0 +1,78 @@
+$kind: http-request
+name: 3 - Pay for Booking
+method: POST
+url: '{{baseUrl}}/bookings/{{bookingRef}}/pay'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+        "cardNumber": "4242424242424242",
+        "cardHolder": "Alice Smith",
+        "expiryDate": "12/28",
+        "cvv": "123"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Booking status is now confirmed", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.equal("confirmed");
+      });
+
+      pm.test("Payment details are present", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("payment");
+          pm.expect(res.payment).to.have.property("transactionId");
+          pm.expect(res.payment.transactionId).to.be.a("string");
+          pm.expect(res.payment).to.have.property("status");
+          pm.expect(res.payment.status).to.equal("confirmed");
+      });
+
+      pm.test("Card details are stored (masked)", () => {
+          const res = pm.response.json();
+          pm.expect(res.payment).to.have.property("cardLast4");
+          pm.expect(res.payment.cardLast4).to.equal("4242");
+          pm.expect(res.payment).to.have.property("cardHolder");
+          pm.expect(res.payment.cardHolder).to.equal("Alice Smith");
+      });
+
+      pm.test("Full card number is NOT exposed in response", () => {
+          const res = pm.response.json();
+          pm.expect(res.payment).to.not.have.property("cardNumber");
+          pm.expect(res.payment).to.not.have.property("cvv");
+          pm.expect(res.payment).to.not.have.property("expiryDate");
+      });
+
+      pm.test("Booking ref matches the requested booking", () => {
+          const res = pm.response.json();
+          const expectedRef = pm.collectionVariables.get("bookingRef");
+          pm.expect(res.bookingRef).to.equal(expectedRef);
+      });
+
+      pm.test("Total amount is preserved after payment", () => {
+          const res = pm.response.json();
+          const expectedTotal = Number(pm.collectionVariables.get("expectedTotal"));
+          pm.expect(res.totalAmount).to.equal(expectedTotal);
+      });
+
+      pm.test("Train and passenger details are preserved", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("train");
+          pm.expect(res.train).to.have.property("trainId");
+          pm.expect(res).to.have.property("passengers");
+          pm.expect(res.passengers).to.be.an("array").with.lengthOf(2);
+      });
+
+      // Store transactionId for verification
+      const res = pm.response.json();
+      pm.collectionVariables.set("transactionId", res.payment.transactionId);
+      console.log("Payment confirmed. Transaction:", res.payment.transactionId);
+    language: text/javascript

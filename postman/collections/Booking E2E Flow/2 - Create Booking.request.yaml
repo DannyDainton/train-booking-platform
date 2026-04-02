@@ -1,0 +1,89 @@
+$kind: http-request
+name: 2 - Create Booking
+method: POST
+url: '{{baseUrl}}/bookings'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+        "trainId": "{{trainId}}",
+        "seatClass": "standard",
+        "passengers": [
+            {
+                "name": "Alice Smith"
+            },
+            {
+                "name": "Bob Jones"
+            }
+        ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Booking status is pending_payment", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.equal("pending_payment");
+      });
+
+      pm.test("Booking has a bookingRef", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res.bookingRef).to.be.a("string");
+          pm.expect(res.bookingRef).to.match(/^BR-/);
+      });
+
+      pm.test("Booking contains train details", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("train");
+          pm.expect(res.train).to.have.property("trainId");
+          pm.expect(res.train).to.have.property("operator");
+          pm.expect(res.train).to.have.property("from");
+          pm.expect(res.train).to.have.property("to");
+          pm.expect(res.train).to.have.property("date");
+          pm.expect(res.train).to.have.property("departure");
+          pm.expect(res.train).to.have.property("arrival");
+      });
+
+      pm.test("All passengers have seat assignments", () => {
+          const res = pm.response.json();
+          pm.expect(res.passengers).to.be.an("array").with.lengthOf(2);
+          res.passengers.forEach(p => {
+              pm.expect(p).to.have.property("passenger");
+              pm.expect(p).to.have.property("seat");
+              pm.expect(p).to.have.property("seatClass");
+              pm.expect(p).to.have.property("price");
+              pm.expect(p.seatClass).to.equal("standard");
+              pm.expect(p.price).to.be.a("number");
+          });
+      });
+
+      pm.test("Total amount is calculated correctly", () => {
+          const res = pm.response.json();
+          const expectedTotal = res.passengers.reduce((sum, p) => sum + p.price, 0);
+          pm.expect(res.totalAmount).to.equal(expectedTotal);
+      });
+
+      pm.test("Currency is GBP", () => {
+          const res = pm.response.json();
+          pm.expect(res.currency).to.equal("GBP");
+      });
+
+      pm.test("No payment info on pending booking", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.not.have.property("payment");
+      });
+
+      // Store bookingRef for subsequent requests
+      const res = pm.response.json();
+      pm.collectionVariables.set("bookingRef", res.bookingRef);
+      pm.collectionVariables.set("expectedTotal", res.totalAmount);
+      console.log("Stored bookingRef:", res.bookingRef);
+    language: text/javascript
