@@ -30,11 +30,11 @@ const server = http.createServer((req, res) => {
         return;
       }
 
-      const { amount, currency, bookingRef } = parsed;
+      const { amount, currency, bookingRef, cardNumber, cardHolder, expiryDate, cvv } = parsed;
 
-      if (amount === undefined || !currency || !bookingRef) {
+      if (amount === undefined || !currency || !bookingRef || !cardNumber || !cardHolder || !expiryDate || !cvv) {
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Missing required fields: amount, currency, bookingRef" }));
+        res.end(JSON.stringify({ error: "Missing required fields: amount, currency, bookingRef, cardNumber, cardHolder, expiryDate, cvv" }));
         return;
       }
 
@@ -52,6 +52,8 @@ const server = http.createServer((req, res) => {
         bookingRef,
         amount,
         currency: currency.toUpperCase(),
+        cardLast4: cardNumber.slice(-4),
+        cardHolder,
         status: "confirmed",
         createdAt: new Date().toISOString()
       };

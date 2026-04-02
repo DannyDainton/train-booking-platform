@@ -1,0 +1,56 @@
+$kind: http-request
+name: 1 - Search Trains
+method: GET
+url: '{{baseUrl}}/search'
+order: 1000
+queryParams:
+  - key: from
+    value: London
+  - key: to
+    value: Manchester
+  - key: date
+    value: '2026-04-03'
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has results array", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("results");
+          pm.expect(res.results).to.be.an("array");
+      });
+
+      pm.test("At least one train is returned", () => {
+          const res = pm.response.json();
+          pm.expect(res.results.length).to.be.greaterThan(0);
+      });
+
+      pm.test("Train results have required properties", () => {
+          const res = pm.response.json();
+          res.results.forEach(train => {
+              pm.expect(train).to.have.property("trainId");
+              pm.expect(train).to.have.property("operator");
+              pm.expect(train).to.have.property("from");
+              pm.expect(train).to.have.property("to");
+              pm.expect(train).to.have.property("date");
+              pm.expect(train).to.have.property("departure");
+              pm.expect(train).to.have.property("arrival");
+              pm.expect(train).to.have.property("seats");
+          });
+      });
+
+      pm.test("Count matches results length", () => {
+          const res = pm.response.json();
+          pm.expect(res.count).to.equal(res.results.length);
+      });
+
+      // Store the first trainId for the next request
+      const res = pm.response.json();
+      if (res.results && res.results.length > 0) {
+          pm.collectionVariables.set("trainId", res.results[0].trainId);
+          console.log("Stored trainId:", res.results[0].trainId);
+      }
+    language: text/javascript

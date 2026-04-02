@@ -1,0 +1,16 @@
+$kind: http-request
+name: Pay for Booking
+method: POST
+url: '{{baseUrl}}/bookings/{{bookingRef}}/pay'
+order: 2500
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "cardNumber": "4242424242424242",
+        "cardHolder": "Alice Smith",
+        "expiryDate": "12/28",
+        "cvv": "123"
+    }

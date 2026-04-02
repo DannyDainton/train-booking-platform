@@ -1,0 +1,8 @@
+$kind: collection
+name: Booking E2E Flow
+variables:
+  baseUrl: http://localhost:3000
+  trainId: ""
+  bookingRef: ""
+  expectedTotal: ""
+  transactionId: ""

@@ -74,7 +74,7 @@ app.get('/search', async (req, res) => {
   }
 });
 
-// Create a booking
+// Create a booking (pending payment)
 app.post('/bookings', async (req, res) => {
   const { trainId, passengers, seatClass = 'standard' } = req.body;
 
@@ -92,7 +92,6 @@ app.post('/bookings', async (req, res) => {
     });
   }
 
-  let failedDependency = 'schedule';
   try {
     // 1. Validate the train exists via Schedule Service
     const scheduleTrainUrl = `${config.scheduleServiceUrl}/schedules/${encodeURIComponent(trainId)}`;
@@ -145,54 +144,13 @@ app.post('/bookings', async (req, res) => {
       });
     }
 
-    failedDependency = 'payment';
-
-    // 2. Process payment via Payment Service
+    // 2. Store the booking as pending payment (no payment processing yet)
     const bookingRef = `BR-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const totalAmount = seatAssignments.reduce((sum, s) => sum + s.price, 0);
 
-    const paymentUrl = `${config.paymentServiceUrl}/payments`;
-    log('info', 'calling payment service', {
-      reason: 'process payment for booking',
-      method: 'POST',
-      url: paymentUrl,
-      bookingRef,
-      amount: totalAmount,
-      currency: 'GBP',
-    });
-    const paymentRes = await fetch(paymentUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: totalAmount,
-        currency: 'GBP',
-        bookingRef
-      })
-    });
-
-    if (!paymentRes.ok) {
-      const body = await paymentRes.json().catch(() => ({}));
-      log('warn', 'payment failed', {
-        bookingRef,
-        status: paymentRes.status,
-      });
-      return res.status(paymentRes.status).json({
-        error: 'Payment failed',
-        details: body
-      });
-    }
-
-    const payment = await paymentRes.json();
-    log('info', 'payment service responded', {
-      bookingRef,
-      httpStatus: paymentRes.status,
-      transactionId: payment.transactionId,
-    });
-
-    // 3. Store the booking
     const booking = {
       bookingRef,
-      status: 'confirmed',
+      status: 'pending_payment',
       train: {
         trainId: train.trainId,
         operator: train.operator,
@@ -206,16 +164,12 @@ app.post('/bookings', async (req, res) => {
       passengers: seatAssignments,
       totalAmount,
       currency: 'GBP',
-      payment: {
-        transactionId: payment.transactionId,
-        status: payment.status
-      },
       createdAt: new Date().toISOString()
     };
 
     bookings.set(bookingRef, booking);
 
-    log('info', 'booking created', {
+    log('info', 'booking created (pending payment)', {
       bookingRef,
       trainId,
       seatClass,
@@ -223,7 +177,103 @@ app.post('/bookings', async (req, res) => {
       totalAmount,
     });
 
-    // 4. Send booking confirmation notification (fire-and-forget)
+    res.status(201).json(booking);
+  } catch (err) {
+    log('error', 'create booking failed', {
+      message: err.message,
+      trainId,
+      unavailableService: 'schedule',
+    });
+    res.status(502).json({
+      error: 'Schedule service is unavailable',
+      service: 'schedule',
+      message: err.message,
+    });
+  }
+});
+
+// Pay for a booking
+app.post('/bookings/:bookingRef/pay', async (req, res) => {
+  const { bookingRef } = req.params;
+  const { cardNumber, cardHolder, expiryDate, cvv } = req.body;
+  const booking = bookings.get(bookingRef);
+
+  if (!booking) {
+    log('warn', 'pay booking not found', { bookingRef });
+    return res.status(404).json({ error: `Booking "${bookingRef}" not found` });
+  }
+
+  if (!cardNumber || !cardHolder || !expiryDate || !cvv) {
+    log('warn', 'pay booking rejected: missing card details', { bookingRef });
+    return res.status(400).json({ error: 'cardNumber, cardHolder, expiryDate, and cvv are required' });
+  }
+
+  if (booking.status === 'confirmed') {
+    log('warn', 'pay booking already paid', { bookingRef });
+    return res.status(409).json({ error: 'Booking has already been paid for' });
+  }
+
+  if (booking.status !== 'pending_payment') {
+    log('warn', 'pay booking invalid state', { bookingRef, status: booking.status });
+    return res.status(400).json({ error: 'Booking is not in a payable state' });
+  }
+
+  try {
+    const paymentUrl = `${config.paymentServiceUrl}/payments`;
+    log('info', 'calling payment service', {
+      reason: 'process payment for booking',
+      method: 'POST',
+      url: paymentUrl,
+      bookingRef,
+      amount: booking.totalAmount,
+      currency: booking.currency,
+    });
+
+    const paymentRes = await fetch(paymentUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: booking.totalAmount,
+        currency: booking.currency,
+        bookingRef,
+        cardNumber,
+        cardHolder,
+        expiryDate,
+        cvv
+      })
+    });
+
+    if (!paymentRes.ok) {
+      const body = await paymentRes.json().catch(() => ({}));
+      log('warn', 'payment failed', { bookingRef, status: paymentRes.status });
+      return res.status(paymentRes.status).json({
+        error: 'Payment failed',
+        details: body
+      });
+    }
+
+    const payment = await paymentRes.json();
+    log('info', 'payment service responded', {
+      bookingRef,
+      httpStatus: paymentRes.status,
+      transactionId: payment.transactionId,
+    });
+
+    // Update booking to confirmed
+    booking.status = 'confirmed';
+    booking.payment = {
+      transactionId: payment.transactionId,
+      status: payment.status,
+      cardLast4: cardNumber.slice(-4),
+      cardHolder: cardHolder
+    };
+
+    log('info', 'booking confirmed', {
+      bookingRef,
+      transactionId: payment.transactionId,
+    });
+
+    // Send booking confirmation notification (fire-and-forget)
     sendNotification(booking).catch((err) => {
       log('warn', 'notification failed (non-blocking)', {
         bookingRef,
@@ -231,18 +281,15 @@ app.post('/bookings', async (req, res) => {
       });
     });
 
-    res.status(201).json(booking);
+    res.json(booking);
   } catch (err) {
-    const service =
-      failedDependency === 'schedule' ? 'Schedule' : 'Payment';
-    log('error', 'create booking failed', {
+    log('error', 'payment service unreachable', {
+      bookingRef,
       message: err.message,
-      trainId,
-      unavailableService: failedDependency,
     });
     res.status(502).json({
-      error: `${service} service is unavailable`,
-      service: failedDependency,
+      error: 'Payment service is unavailable',
+      service: 'payment',
       message: err.message,
     });
   }
