@@ -71,20 +71,58 @@ Copy `.env.example` to `.env` (already done by default). The key variables are:
 | `OPENWEATHER_API_URL`  | `https://api.openweathermap.org` | Upstream OpenWeather base URL (point at local mock during dev) |
 | `OPENWEATHER_API_KEY`  | `dev-placeholder-key`    | API key for the real OpenWeather API |
 
-### Swapping to a mock server
+## Running with mocks
 
-To point the Booking Service at a local mock server instead of the real dependent services, just change the URLs in `.env`:
+This repo ships with Postman local mocks for every dependency under `postman/mocks/`. You can run the real services against any combination of mocks **without editing `.env`** — the `dev:mock:*` scripts simply override the relevant `*_SERVICE_URL` inline.
 
-```env
-SCHEDULE_SERVICE_URL=http://localhost:9000
-PAYMENT_SERVICE_URL=http://localhost:9001
-NOTIFICATION_SERVICE_URL=http://localhost:9002
+### Mock ports
 
-# Point the Weather Service at a local mock of the OpenWeather API:
-OPENWEATHER_API_URL=http://localhost:4504
+| Dependency                | Mock port |
+|---------------------------|-----------|
+| Schedule Service          | `4501`    |
+| Payment Service           | `4502`    |
+| Notification Service      | `4503`    |
+| OpenWeather (3rd-party)   | `4504`    |
+
+### 1. Start the mocks you need
+
+In one terminal, start all four Postman local mocks at once:
+
+```bash
+npm run mocks:start
 ```
 
-Then restart the Booking Service. It will call your mock server on those URLs instead.
+Or start them individually:
+
+```bash
+npm run mocks:schedule
+npm run mocks:payment
+npm run mocks:notification
+npm run mocks:openweather
+```
+
+### 2. Start the services pointed at those mocks
+
+In a second terminal, pick the script that matches what you mocked:
+
+```bash
+npm run dev                    # all real services (default)
+npm run dev:mock:schedule      # only Schedule mocked
+npm run dev:mock:payment       # only Payment mocked
+npm run dev:mock:notification  # only Notification mocked
+npm run dev:mock:openweather   # only OpenWeather mocked
+npm run dev:mock:all           # all dependencies mocked
+```
+
+Need an ad-hoc combination? Just prefix `npm run dev` with the URLs you want to override:
+
+```bash
+SCHEDULE_SERVICE_URL=http://localhost:4501 \
+PAYMENT_SERVICE_URL=http://localhost:4502 \
+npm run dev
+```
+
+Your `.env` stays untouched — stop the script and you're back to the real dependencies on the next `npm run dev`.
 
 ## API Examples
 

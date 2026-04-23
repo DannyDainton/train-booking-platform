@@ -1,7 +1,7 @@
 $kind: http-request
-name: 7 - Pay for Booking (Edinburgh to London)
+name: 3 - Pay for Booking (Edinburgh to London)
 method: POST
-url: '{{baseUrl}}/bookings/{{edinBookingRef}}/pay'
+url: "{{baseUrl}}/bookings/{{edinBookingRef}}/pay"
 order: 7000
 headers:
   - key: Content-Type
@@ -17,15 +17,17 @@ body:
     }
 scripts:
   - type: afterResponse
-    code: |-
+    code: >-
       pm.test("Status code is 200", () => {
           pm.response.to.have.status(200);
       });
+
 
       pm.test("Booking status is now confirmed", () => {
           const res = pm.response.json();
           pm.expect(res.status).to.equal("confirmed");
       });
+
 
       pm.test("Payment details are present", () => {
           const res = pm.response.json();
@@ -34,11 +36,13 @@ scripts:
           pm.expect(res.payment.status).to.equal("confirmed");
       });
 
+
       pm.test("Card details are stored (masked)", () => {
           const res = pm.response.json();
           pm.expect(res.payment.cardLast4).to.equal("4242");
           pm.expect(res.payment.cardHolder).to.equal("Alice Smith");
       });
+
 
       pm.test("Full card number is NOT exposed in response", () => {
           const res = pm.response.json();
@@ -47,11 +51,13 @@ scripts:
           pm.expect(res.payment).to.not.have.property("expiryDate");
       });
 
+
       pm.test("Booking ref matches the requested booking", () => {
           const res = pm.response.json();
           const expectedRef = pm.collectionVariables.get("edinBookingRef");
           pm.expect(res.bookingRef).to.equal(expectedRef);
       });
+
 
       pm.test("Total amount is preserved after payment", () => {
           const res = pm.response.json();
@@ -59,9 +65,17 @@ scripts:
           pm.expect(res.totalAmount).to.equal(expectedTotal);
       });
 
+
       // Store transactionId for verification
+
       const res = pm.response.json();
-      pm.collectionVariables.set("edinTransactionId", res.payment.transactionId);
-      console.log("Edinburgh booking paid. Transaction:", res.payment.transactionId);
-      console.log("Weather alert for London destination should be dispatched asynchronously if travelAdvisory.level === 'warning'.");
+
+      pm.collectionVariables.set("edinTransactionId",
+      res.payment.transactionId);
+
+      console.log("Edinburgh booking paid. Transaction:",
+      res.payment.transactionId);
+
+      console.log("Weather alert for London destination should be dispatched
+      asynchronously if travelAdvisory.level === 'warning'.");
     language: text/javascript
