@@ -1,4 +1,12 @@
 $kind: collection
 name: Notification Service
-variables:
-  baseUrl: http://localhost:3003
+description: |-
+  This collection covers the core endpoints of the Notification Service — a microservice responsible for dispatching and retrieving booking-related notifications within the train booking platform.
+
+  It includes the following requests:
+
+  - **Send Notification** – Triggers a new notification (e.g. a booking confirmation) by POSTing a structured payload to `/notifications`. The payload includes the notification type, recipient details, train journey information, passenger list, and total fare.
+  - **Get Notification** – Retrieves a previously sent notification by its unique ID via a GET request to `/notifications/{{notificationId}}`.
+  - **Health Check** – A lightweight GET request to `/ping` used to verify that the Notification Service is up and running.
+
+  Use this collection to test notification dispatch and retrieval flows, or to validate service availability as part of broader integration testing across the train booking platform.

@@ -1,0 +1,17 @@
+simulation: Response Delay
+mocks:
+  - file: ../mocks/notification-mock.js
+    scenarios:
+      - type: latency
+        config:
+          delay_ms: 2000
+  - file: ../mocks/payment-mock.js
+    scenarios:
+      - type: latency
+        config:
+          delay_ms: 2000
+  - file: ../mocks/schedule-mock.js
+    scenarios:
+      - type: latency
+        config:
+          delay_ms: 2000

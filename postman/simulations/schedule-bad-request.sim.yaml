@@ -1,0 +1,8 @@
+simulation: Schedule Bad Request
+mocks:
+  - file: ../mocks/notification-mock.js
+  - file: ../mocks/schedule-mock.js
+    scenarios:
+      - type: error
+        config:
+          status_code: 400
