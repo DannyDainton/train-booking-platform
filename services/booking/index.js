@@ -281,6 +281,14 @@ app.post('/bookings/:bookingRef/pay', async (req, res) => {
       });
     });
 
+    // Check destination weather and send an alert if disruption is likely (fire-and-forget)
+    maybeSendWeatherAlert(booking).catch((err) => {
+      log('warn', 'weather alert failed (non-blocking)', {
+        bookingRef,
+        message: err.message,
+      });
+    });
+
     res.json(booking);
   } catch (err) {
     log('error', 'payment service unreachable', {
@@ -295,13 +303,47 @@ app.post('/bookings/:bookingRef/pay', async (req, res) => {
   }
 });
 
-// Get a booking by reference
-app.get('/bookings/:bookingRef', (req, res) => {
+// Get a booking by reference (optionally enriched with destination weather)
+app.get('/bookings/:bookingRef', async (req, res) => {
   const booking = bookings.get(req.params.bookingRef);
 
   if (!booking) {
     log('warn', 'booking not found', { bookingRef: req.params.bookingRef });
     return res.status(404).json({ error: `Booking "${req.params.bookingRef}" not found` });
+  }
+
+  // Enrich with destination weather (non-blocking — failures don't affect the booking response)
+  const includeWeather = req.query.weather !== 'false';
+  if (includeWeather && booking.train && booking.train.to) {
+    const destination = booking.train.to.split(' ')[0]; // e.g. "Manchester" from "Manchester Piccadilly"
+    try {
+      const weatherUrl = `${config.weatherServiceUrl}/weather?city=${encodeURIComponent(destination)}`;
+      log('info', 'calling weather service', {
+        reason: 'enrich booking with destination weather',
+        method: 'GET',
+        url: weatherUrl,
+        bookingRef: booking.bookingRef,
+      });
+      const weatherRes = await fetch(weatherUrl);
+      if (weatherRes.ok) {
+        const weather = await weatherRes.json();
+        log('info', 'weather service responded', {
+          bookingRef: booking.bookingRef,
+          httpStatus: weatherRes.status,
+          summary: weather.conditions && weather.conditions.summary,
+        });
+        return res.json({ ...booking, destinationWeather: weather });
+      }
+      log('warn', 'weather service returned error', {
+        bookingRef: booking.bookingRef,
+        status: weatherRes.status,
+      });
+    } catch (err) {
+      log('warn', 'weather service unreachable (non-blocking)', {
+        bookingRef: booking.bookingRef,
+        message: err.message,
+      });
+    }
   }
 
   res.json(booking);
@@ -356,6 +398,94 @@ async function sendNotification(booking) {
 
   const notif = await notifRes.json();
   log('info', 'notification service responded', {
+    bookingRef: booking.bookingRef,
+    notificationId: notif.notificationId,
+    httpStatus: notifRes.status,
+  });
+}
+
+/**
+ * Fire-and-forget helper — checks destination weather for a confirmed booking and
+ * sends a `weather_alert` notification if the travelAdvisory indicates disruption.
+ * Failures are logged but never block the booking response.
+ */
+async function maybeSendWeatherAlert(booking) {
+  if (!booking.train || !booking.train.to) return;
+
+  const destination = booking.train.to.split(' ')[0];
+  const weatherUrl = `${config.weatherServiceUrl}/weather?city=${encodeURIComponent(destination)}`;
+
+  log('info', 'calling weather service', {
+    reason: 'evaluate destination weather for alert',
+    method: 'GET',
+    url: weatherUrl,
+    bookingRef: booking.bookingRef,
+  });
+
+  const weatherRes = await fetch(weatherUrl);
+  if (!weatherRes.ok) {
+    log('warn', 'weather service returned error (no alert sent)', {
+      bookingRef: booking.bookingRef,
+      status: weatherRes.status,
+    });
+    return;
+  }
+
+  const weather = await weatherRes.json();
+  const level = weather.travelAdvisory && weather.travelAdvisory.level;
+
+  // Only alert on warnings — 'advice' and 'ok' are not alert-worthy
+  if (level !== 'warning') {
+    log('info', 'no weather alert needed', {
+      bookingRef: booking.bookingRef,
+      level: level || 'unknown',
+      summary: weather.conditions && weather.conditions.summary,
+    });
+    return;
+  }
+
+  const notificationUrl = `${config.notificationServiceUrl}/notifications`;
+  const payload = {
+    type: 'weather_alert',
+    recipient: booking.passengers[0].passenger,
+    bookingRef: booking.bookingRef,
+    message: `Weather alert for ${weather.city} on your travel day: ${weather.travelAdvisory.message}`,
+    details: {
+      destination: weather.city,
+      conditions: weather.conditions,
+      temperature: weather.temperature,
+      wind: weather.wind,
+      travelAdvisory: weather.travelAdvisory,
+      train: booking.train,
+    },
+  };
+
+  log('info', 'calling notification service', {
+    reason: 'send weather alert',
+    method: 'POST',
+    url: notificationUrl,
+    bookingRef: booking.bookingRef,
+    advisoryLevel: level,
+  });
+
+  const notifRes = await fetch(notificationUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!notifRes.ok) {
+    const body = await notifRes.json().catch(() => ({}));
+    log('warn', 'weather alert notification returned error', {
+      bookingRef: booking.bookingRef,
+      status: notifRes.status,
+      details: body,
+    });
+    return;
+  }
+
+  const notif = await notifRes.json();
+  log('info', 'weather alert sent', {
     bookingRef: booking.bookingRef,
     notificationId: notif.notificationId,
     httpStatus: notifRes.status,

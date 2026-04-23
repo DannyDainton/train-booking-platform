@@ -1,3 +1,27 @@
 name: Booking Platform Environment
-values: []
+values:
+  - key: baseUrl
+    value: http://localhost:3000
+    type: default
+    enabled: true
+  - key: bookingServiceUrl
+    value: http://localhost:3000
+    type: default
+    enabled: true
+  - key: scheduleServiceUrl
+    value: http://localhost:3001
+    type: default
+    enabled: true
+  - key: paymentServiceUrl
+    value: http://localhost:3002
+    type: default
+    enabled: true
+  - key: notificationServiceUrl
+    value: http://localhost:3003
+    type: default
+    enabled: true
+  - key: weatherServiceUrl
+    value: http://localhost:3004
+    type: default
+    enabled: true
 color: 120

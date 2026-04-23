@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "name": "OpenWeather API Mock",
+  "protocol": "http",
+  "port": 4504,
+  "mockSrc": "./openweather-mock.js",
+  "autoRestartOnChange": true,
+  "logging": {
+    "level": "verbose",
+    "showBody": true
+  }
+}

@@ -1,15 +1,15 @@
 $kind: http-request
-name: 1 - Search Trains
+name: 5 - Search Trains (Edinburgh to London)
 method: GET
-url: "{{baseUrl}}/search?from=London&to=Manchester&date=2026-04-01"
-order: 1000
+url: "{{baseUrl}}/search?from=Edinburgh&to=London&date=2026-04-01"
+order: 5000
 queryParams:
   - key: from
-    value: London
+    value: Edinburgh
   - key: to
-    value: Manchester
+    value: London
   - key: date
-    value: 2026-04-01
+    value: '2026-04-01'
 scripts:
   - type: afterResponse
     code: |-
@@ -28,13 +28,19 @@ scripts:
           pm.expect(res.results.length).to.be.greaterThan(0);
       });
 
+      pm.test("All trains are Edinburgh to London", () => {
+          const res = pm.response.json();
+          res.results.forEach(train => {
+              pm.expect(train.from).to.include("Edinburgh");
+              pm.expect(train.to).to.include("London");
+          });
+      });
+
       pm.test("Train results have required properties", () => {
           const res = pm.response.json();
           res.results.forEach(train => {
               pm.expect(train).to.have.property("trainId");
               pm.expect(train).to.have.property("operator");
-              pm.expect(train).to.have.property("from");
-              pm.expect(train).to.have.property("to");
               pm.expect(train).to.have.property("date");
               pm.expect(train).to.have.property("departure");
               pm.expect(train).to.have.property("arrival");
@@ -42,15 +48,10 @@ scripts:
           });
       });
 
-      pm.test("Count matches results length", () => {
-          const res = pm.response.json();
-          pm.expect(res.count).to.equal(res.results.length);
-      });
-
-      // Store the first trainId for the next request
+      // Store the first trainId for the next request (separate var from the London→Manchester flow)
       const res = pm.response.json();
       if (res.results && res.results.length > 0) {
-          pm.collectionVariables.set("trainId", res.results[0].trainId);
-          console.log("Stored trainId:", res.results[0].trainId);
+          pm.collectionVariables.set("edinTrainId", res.results[0].trainId);
+          console.log("Stored edinTrainId:", res.results[0].trainId);
       }
     language: text/javascript

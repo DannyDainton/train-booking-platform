@@ -88,6 +88,38 @@ const timetable = [
     }
   },
   {
+    trainId: 'T250',
+    operator: 'LNER',
+    from: 'Edinburgh Waverley',
+    to: 'London Kings Cross',
+    date: '2026-04-01',
+    departure: '07:30',
+    arrival: '12:00',
+    duration: '4h 30m',
+    price: 92.00,
+    seatsAvailable: 64,
+    seats: {
+      standard: { available: 40, price: 92.00 },
+      firstClass: { available: 24, price: 110.40 }
+    }
+  },
+  {
+    trainId: 'T251',
+    operator: 'LNER',
+    from: 'Edinburgh Waverley',
+    to: 'London Kings Cross',
+    date: '2026-04-02',
+    departure: '08:00',
+    arrival: '12:30',
+    duration: '4h 30m',
+    price: 82.00,
+    seatsAvailable: 118,
+    seats: {
+      standard: { available: 80, price: 82.00 },
+      firstClass: { available: 38, price: 98.40 }
+    }
+  },
+  {
     trainId: 'T300',
     operator: 'GWR',
     from: 'London Paddington',

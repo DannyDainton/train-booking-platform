@@ -18,7 +18,7 @@ app.post('/notifications', (req, res) => {
     });
   }
 
-  const validTypes = ['booking_confirmation', 'payment_receipt', 'cancellation', 'schedule_change'];
+  const validTypes = ['booking_confirmation', 'payment_receipt', 'cancellation', 'schedule_change', 'weather_alert'];
   if (!validTypes.includes(type)) {
     return res.status(400).json({
       error: `"type" must be one of: ${validTypes.join(', ')}`
@@ -41,6 +41,26 @@ app.post('/notifications', (req, res) => {
   notifications.set(notificationId, notification);
 
   res.status(201).json(notification);
+});
+
+// List notifications, optionally filtered by bookingRef and/or type
+app.get('/notifications', (req, res) => {
+  const { bookingRef, type } = req.query;
+
+  let results = Array.from(notifications.values());
+
+  if (bookingRef) {
+    results = results.filter((n) => n.bookingRef === bookingRef);
+  }
+
+  if (type) {
+    results = results.filter((n) => n.type === type);
+  }
+
+  // Most recent first
+  results.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
+  res.json({ count: results.length, results });
 });
 
 // Get a notification by ID
@@ -69,6 +89,8 @@ function generateDefaultMessage(type, bookingRef) {
       return `Your booking ${bookingRef} has been cancelled.`;
     case 'schedule_change':
       return `There has been a schedule change affecting your booking ${bookingRef}.`;
+    case 'weather_alert':
+      return `Weather alert for your upcoming journey (booking ${bookingRef}). Check for possible disruption before travelling.`;
     default:
       return `Notification for booking ${bookingRef}.`;
   }

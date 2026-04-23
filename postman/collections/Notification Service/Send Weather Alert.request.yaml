@@ -1,0 +1,48 @@
+$kind: http-request
+name: Send Weather Alert
+method: POST
+url: '{{baseUrl}}/notifications'
+order: 1500
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "type": "weather_alert",
+        "recipient": "Alice Smith",
+        "bookingRef": "BR-TEST0001",
+        "message": "Weather alert for Manchester on your travel day: Severe weather — check for service disruption before travelling.",
+        "details": {
+            "destination": "Manchester",
+            "conditions": {
+                "summary": "Thunderstorm",
+                "description": "thunderstorm with heavy rain",
+                "category": "severe"
+            },
+            "temperature": {
+                "current": 8.2,
+                "feelsLike": 5.1,
+                "min": 7.0,
+                "max": 10.0,
+                "unit": "C"
+            },
+            "wind": {
+                "speed": 17.5,
+                "unit": "m/s"
+            },
+            "travelAdvisory": {
+                "level": "warning",
+                "message": "Severe weather — check for service disruption before travelling."
+            },
+            "train": {
+                "trainId": "T100",
+                "operator": "Northern Rail",
+                "from": "London Euston",
+                "to": "Manchester Piccadilly",
+                "date": "2026-04-25",
+                "departure": "08:15",
+                "arrival": "10:25"
+            }
+        }
+    }

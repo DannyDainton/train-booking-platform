@@ -10,3 +10,5 @@ description: |-
   - **Health Check** – A lightweight GET request to `/ping` used to verify that the Notification Service is up and running.
 
   Use this collection to test notification dispatch and retrieval flows, or to validate service availability as part of broader integration testing across the train booking platform.
+variables:
+  baseUrl: http://localhost:3003

@@ -1,0 +1,13 @@
+$kind: collection
+name: Weather Service
+description: |-
+  Weather Service — wraps the OpenWeather 3rd‑party API and exposes a simplified,
+  travel‑focused weather endpoint used by the Booking Service to enrich booking
+  responses with destination weather.
+
+  During development, point the service at the local OpenWeather mock by setting
+  `OPENWEATHER_API_URL=http://localhost:4504` in `.env`.
+variables:
+  - key: baseUrl
+    value: http://localhost:3004
+    type: default

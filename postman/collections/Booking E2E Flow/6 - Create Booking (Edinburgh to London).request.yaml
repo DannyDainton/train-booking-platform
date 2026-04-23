@@ -1,0 +1,75 @@
+$kind: http-request
+name: 6 - Create Booking (Edinburgh to London)
+method: POST
+url: '{{baseUrl}}/bookings'
+order: 6000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+        "trainId": "{{edinTrainId}}",
+        "seatClass": "first",
+        "passengers": [
+            {
+                "name": "Alice Smith"
+            },
+            {
+                "name": "Bob Jones"
+            }
+        ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Booking status is pending_payment", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.equal("pending_payment");
+      });
+
+      pm.test("Booking is for Edinburgh to London journey", () => {
+          const res = pm.response.json();
+          pm.expect(res.train.from).to.include("Edinburgh");
+          pm.expect(res.train.to).to.include("London");
+      });
+
+      pm.test("Booking has a bookingRef", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res.bookingRef).to.match(/^BR-/);
+      });
+
+      pm.test("All passengers have first-class seat assignments", () => {
+          const res = pm.response.json();
+          pm.expect(res.passengers).to.be.an("array").with.lengthOf(2);
+          res.passengers.forEach(p => {
+              pm.expect(p).to.have.property("passenger");
+              pm.expect(p).to.have.property("seat");
+              pm.expect(p.seatClass).to.equal("first");
+              pm.expect(p.price).to.be.a("number");
+          });
+      });
+
+      pm.test("Total amount matches sum of passenger prices", () => {
+          const res = pm.response.json();
+          const expectedTotal = res.passengers.reduce((sum, p) => sum + p.price, 0);
+          pm.expect(res.totalAmount).to.equal(expectedTotal);
+      });
+
+      pm.test("Currency is GBP", () => {
+          const res = pm.response.json();
+          pm.expect(res.currency).to.equal("GBP");
+      });
+
+      // Store bookingRef for subsequent requests (separate var from the London→Manchester flow)
+      const res = pm.response.json();
+      pm.collectionVariables.set("edinBookingRef", res.bookingRef);
+      pm.collectionVariables.set("edinExpectedTotal", res.totalAmount);
+      console.log("Stored edinBookingRef:", res.bookingRef);
+    language: text/javascript

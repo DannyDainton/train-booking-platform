@@ -6,3 +6,7 @@ variables:
   bookingRef: ""
   expectedTotal: ""
   transactionId: ""
+  edinBookingRef: ""
+  edinExpectedTotal: ""
+  edinTrainId: ""
+  edinTransactionId: ""

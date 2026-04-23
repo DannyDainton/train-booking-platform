@@ -1,7 +1,7 @@
 const useColor =
-  process.stdout.isTTY &&
   !process.env.NO_COLOR &&
-  process.env.FORCE_COLOR !== '0';
+  process.env.FORCE_COLOR !== '0' &&
+  (process.stdout.isTTY || Boolean(process.env.FORCE_COLOR));
 
 const c = useColor
   ? {

@@ -1,0 +1,74 @@
+$kind: http-request
+name: 9 - Assert Weather Alert Notification (Edinburgh to London)
+method: GET
+url: '{{notificationServiceUrl}}/notifications?bookingRef={{edinBookingRef}}&type=weather_alert'
+order: 9000
+scripts:
+  - type: preRequest
+    code: |-
+      // The Booking Service fires the weather_alert as fire-and-forget after payment (step 7).
+      // Give it a brief moment to reach the Notification Service before we query.
+      setTimeout(() => {}, 500);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has count and results array", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("count");
+          pm.expect(res).to.have.property("results").that.is.an("array");
+      });
+
+      pm.test("Exactly one weather_alert was created for this booking", () => {
+          const res = pm.response.json();
+          pm.expect(res.count, "weather_alert count").to.equal(1);
+          pm.expect(res.results.length).to.equal(1);
+      });
+
+      pm.test("Notification is bound to the correct booking", () => {
+          const res = pm.response.json();
+          const expectedRef = pm.collectionVariables.get("edinBookingRef");
+          pm.expect(res.results[0].bookingRef).to.equal(expectedRef);
+      });
+
+      pm.test("Notification type is weather_alert", () => {
+          const res = pm.response.json();
+          pm.expect(res.results[0].type).to.equal("weather_alert");
+      });
+
+      pm.test("Notification was sent successfully", () => {
+          const res = pm.response.json();
+          pm.expect(res.results[0].status).to.equal("sent");
+          pm.expect(res.results[0]).to.have.property("notificationId").that.is.a("string");
+      });
+
+      pm.test("Notification recipient matches the booking passenger", () => {
+          const res = pm.response.json();
+          const recipient = res.results[0].recipient;
+          pm.expect(recipient, "recipient should be present").to.be.a("string").and.not.empty;
+      });
+
+      pm.test("Notification details include destination weather context", () => {
+          const res = pm.response.json();
+          const details = res.results[0].details || {};
+          pm.expect(details).to.have.property("destination", "London");
+          pm.expect(details).to.have.nested.property("travelAdvisory.level", "warning");
+          pm.expect(details).to.have.property("conditions");
+          pm.expect(details).to.have.property("train");
+      });
+
+      pm.test("Notification message mentions London", () => {
+          const res = pm.response.json();
+          pm.expect(res.results[0].message).to.match(/London/i);
+      });
+
+      // Persist the notification id for any downstream debugging / chained lookups
+      const notif = pm.response.json().results[0];
+      if (notif && notif.notificationId) {
+          pm.collectionVariables.set("edinWeatherAlertId", notif.notificationId);
+          console.log("weather_alert asserted:", notif.notificationId, "-", notif.message);
+      }
+    language: text/javascript

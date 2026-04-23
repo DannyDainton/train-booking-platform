@@ -1,0 +1,68 @@
+$kind: http-request
+name: 8 - Get Confirmed Booking with Weather (Edinburgh to London)
+method: GET
+url: '{{baseUrl}}/bookings/{{edinBookingRef}}'
+order: 8000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Booking is confirmed", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.equal("confirmed");
+      });
+
+      pm.test("Booking ref is correct", () => {
+          const res = pm.response.json();
+          const expectedRef = pm.collectionVariables.get("edinBookingRef");
+          pm.expect(res.bookingRef).to.equal(expectedRef);
+      });
+
+      pm.test("Payment info is persisted", () => {
+          const res = pm.response.json();
+          const expectedTxn = pm.collectionVariables.get("edinTransactionId");
+          pm.expect(res.payment.transactionId).to.equal(expectedTxn);
+          pm.expect(res.payment.status).to.equal("confirmed");
+      });
+
+      pm.test("Response includes destinationWeather (from Weather Service)", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("destinationWeather");
+      });
+
+      pm.test("destinationWeather is for London (the booking's destination)", () => {
+          const res = pm.response.json();
+          pm.expect(res.destinationWeather.city).to.equal("London");
+      });
+
+      pm.test("destinationWeather has normalised shape", () => {
+          const res = pm.response.json();
+          const w = res.destinationWeather;
+          pm.expect(w).to.have.property("conditions");
+          pm.expect(w.conditions).to.have.property("summary");
+          pm.expect(w.conditions).to.have.property("category");
+          pm.expect(w).to.have.property("temperature");
+          pm.expect(w).to.have.property("travelAdvisory");
+          pm.expect(w.travelAdvisory).to.have.property("level");
+          pm.expect(w.travelAdvisory).to.have.property("message");
+      });
+
+      pm.test("Travel advisory level is valid", () => {
+          const res = pm.response.json();
+          pm.expect(["warning", "advice", "ok"]).to.include(res.destinationWeather.travelAdvisory.level);
+      });
+
+      // Informational: note whether a weather_alert was expected to fire (async, fire-and-forget on the Booking Service)
+      const res = pm.response.json();
+      const level = res.destinationWeather && res.destinationWeather.travelAdvisory && res.destinationWeather.travelAdvisory.level;
+      if (level === "warning") {
+          console.log("Weather advisory is 'warning' — a weather_alert notification should have been fired by the Booking Service after payment.");
+      } else {
+          console.log(`Weather advisory is '${level}' — no weather_alert expected.`);
+      }
+
+      console.log("Edinburgh → London E2E flow complete! Booking", res.bookingRef, "is confirmed with destination weather.");
+    language: text/javascript

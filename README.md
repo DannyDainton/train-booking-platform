@@ -1,6 +1,6 @@
 # Train Booking Platform
 
-A small Node.js microservices project for a train booking system. Four Express services work together — a main **Booking Service** that orchestrates three dependent services: **Schedule Service**, **Payment Service**, and **Notification Service**.
+A small Node.js microservices project for a train booking system. Five Express services work together — a main **Booking Service** that orchestrates four dependent services: **Schedule Service**, **Payment Service**, **Notification Service**, and **Weather Service** (which calls the OpenWeather 3rd‑party API).
 
 ## Architecture
 
@@ -28,6 +28,12 @@ A small Node.js microservices project for a train booking system. Four Express s
                                   │  Notification Service    │  :3003
                                   │  POST /notifications     │
                                   │  GET  /notifications/:id │
+                                  └─────────────────────────┘
+
+                                  ┌─────────────────────────┐
+                                  │  Weather Service         │  :3004
+                                  │  GET /weather?city=...   │──▶  OpenWeather API (3rd party)
+                                  │  GET /ping               │
                                   └─────────────────────────┘
 ```
 
@@ -60,6 +66,10 @@ Copy `.env.example` to `.env` (already done by default). The key variables are:
 | `PAYMENT_SERVICE_URL`  | `http://localhost:3002`  | URL the Booking Service calls      |
 | `NOTIFICATION_PORT`    | `3003`                   | Port for the Notification Service  |
 | `NOTIFICATION_SERVICE_URL` | `http://localhost:3003` | URL the Booking Service calls    |
+| `WEATHER_PORT`         | `3004`                   | Port for the Weather Service       |
+| `WEATHER_SERVICE_URL`  | `http://localhost:3004`  | URL the Booking Service calls      |
+| `OPENWEATHER_API_URL`  | `https://api.openweathermap.org` | Upstream OpenWeather base URL (point at local mock during dev) |
+| `OPENWEATHER_API_KEY`  | `dev-placeholder-key`    | API key for the real OpenWeather API |
 
 ### Swapping to a mock server
 
@@ -69,6 +79,9 @@ To point the Booking Service at a local mock server instead of the real dependen
 SCHEDULE_SERVICE_URL=http://localhost:9000
 PAYMENT_SERVICE_URL=http://localhost:9001
 NOTIFICATION_SERVICE_URL=http://localhost:9002
+
+# Point the Weather Service at a local mock of the OpenWeather API:
+OPENWEATHER_API_URL=http://localhost:4504
 ```
 
 Then restart the Booking Service. It will call your mock server on those URLs instead.

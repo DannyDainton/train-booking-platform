@@ -4,11 +4,12 @@
   "description": "A small train booking platform with 4 microservices",
   "private": true,
   "scripts": {
-    "dev": "concurrently -n booking,schedule,payment,notification -c blue,green,yellow,magenta \"node services/booking/index.js\" \"node services/schedule/index.js\" \"node services/payment/index.js\" \"node services/notification/index.js\"",
+    "dev": "concurrently -n booking,schedule,payment,notification,weather -c blue,green,yellow,magenta,cyan \"FORCE_COLOR=1 node services/booking/index.js\" \"FORCE_COLOR=1 node services/schedule/index.js\" \"FORCE_COLOR=1 node services/payment/index.js\" \"FORCE_COLOR=1 node services/notification/index.js\" \"FORCE_COLOR=1 node services/weather/index.js\"",
     "start:booking": "node services/booking/index.js",
     "start:schedule": "node services/schedule/index.js",
     "start:payment": "node services/payment/index.js",
-    "start:notification": "node services/notification/index.js"
+    "start:notification": "node services/notification/index.js",
+    "start:weather": "node services/weather/index.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
