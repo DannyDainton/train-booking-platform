@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+/**
+ * Runs all Postman mocks via concurrently, but suppresses concurrently's own
+ * "[name] <cmd> exited with code 0" banner lines while keeping colours,
+ * prefixes, and real mock output intact.
+ */
+const concurrently = require('concurrently');
+const { Writable } = require('stream');
+
+const EXIT_LINE = /exited with code /;
+
+const filteredStdout = new Writable({
+  write(chunk, _encoding, callback) {
+    const text = chunk.toString();
+    const lines = text.split(/(\r?\n)/);
+    let out = '';
+    for (let i = 0; i < lines.length; i += 2) {
+      const line = lines[i];
+      const nl = lines[i + 1] || '';
+      if (line && EXIT_LINE.test(stripAnsi(line))) continue;
+      out += line + nl;
+    }
+    if (out) process.stdout.write(out);
+    callback();
+  },
+});
+
+function stripAnsi(str) {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
+}
+
+const { result } = concurrently(
+  [
+    { name: 'schedule-mock',     command: 'postman mock start postman/mocks/schedule-mock.json' },
+    { name: 'payment-mock',      command: 'postman mock start postman/mocks/payment-mock.json' },
+    { name: 'notification-mock', command: 'postman mock start postman/mocks/notification-mock.json' },
+    { name: 'openweather-mock',  command: 'postman mock start postman/mocks/openweather-mock.json' },
+  ],
+  {
+    prefix: 'name',
+    prefixColors: ['green', 'yellow', 'magenta', 'cyan'],
+    outputStream: filteredStdout,
+  }
+);
+
+result.then(
+  () => process.exit(0),
+  () => process.exit(1)
+);
