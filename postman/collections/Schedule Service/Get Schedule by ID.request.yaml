@@ -3,3 +3,38 @@ name: Get Schedule by ID
 method: GET
 url: '{{baseUrl}}/schedules/{{trainId}}'
 order: 2000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Train has expected properties", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("trainId");
+          pm.expect(res).to.have.property("operator");
+          pm.expect(res).to.have.property("from");
+          pm.expect(res).to.have.property("to");
+          pm.expect(res).to.have.property("date");
+          pm.expect(res).to.have.property("departure");
+          pm.expect(res).to.have.property("arrival");
+          pm.expect(res).to.have.property("duration");
+          pm.expect(res).to.have.property("price");
+          pm.expect(res).to.have.property("seatsAvailable");
+      });
+
+      pm.test("seats has standard and firstClass with price and availability", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("seats");
+          pm.expect(res.seats.standard).to.have.property("available");
+          pm.expect(res.seats.standard).to.have.property("price");
+          pm.expect(res.seats.firstClass).to.have.property("available");
+          pm.expect(res.seats.firstClass).to.have.property("price");
+      });
+
+      pm.test("First class price is greater than or equal to standard price", () => {
+          const res = pm.response.json();
+          pm.expect(res.seats.firstClass.price).to.be.at.least(res.seats.standard.price);
+      });
+    language: text/javascript

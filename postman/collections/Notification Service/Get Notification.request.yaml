@@ -3,3 +3,43 @@ name: Get Notification
 method: GET
 url: '{{baseUrl}}/notifications/{{notificationId}}'
 order: 2000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Notification has expected properties", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("notificationId");
+          pm.expect(res).to.have.property("type");
+          pm.expect(res).to.have.property("recipient");
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res).to.have.property("message");
+          pm.expect(res).to.have.property("details");
+          pm.expect(res).to.have.property("status");
+          pm.expect(res).to.have.property("createdAt");
+      });
+
+      pm.test("notificationId has NTF- prefix", () => {
+          const res = pm.response.json();
+          pm.expect(res.notificationId).to.match(/^NTF-/);
+      });
+
+      pm.test("Status is sent", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("sent");
+      });
+
+      pm.test("Type is a recognised value", () => {
+          const res = pm.response.json();
+          pm.expect(res.type).to.be.oneOf([
+              "booking_confirmation",
+              "payment_receipt",
+              "cancellation",
+              "schedule_change",
+              "weather_alert"
+          ]);
+      });
+    language: text/javascript

@@ -3,3 +3,35 @@ name: Get Payment
 method: GET
 url: '{{baseUrl}}/payments/{{transactionId}}'
 order: 2000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Payment has expected properties", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("transactionId");
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res).to.have.property("amount");
+          pm.expect(res).to.have.property("currency");
+          pm.expect(res).to.have.property("status");
+          pm.expect(res).to.have.property("createdAt");
+      });
+
+      pm.test("transactionId has TXN- prefix", () => {
+          const res = pm.response.json();
+          pm.expect(res.transactionId).to.match(/^TXN-/);
+      });
+
+      pm.test("amount is a positive number", () => {
+          const res = pm.response.json();
+          pm.expect(res.amount).to.be.a("number").and.to.be.greaterThan(0);
+      });
+
+      pm.test("Payment status is confirmed", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("confirmed");
+      });
+    language: text/javascript

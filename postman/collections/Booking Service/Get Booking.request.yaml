@@ -3,3 +3,40 @@ name: Get Booking
 method: GET
 url: '{{baseUrl}}/bookings/{{bookingRef}}'
 order: 3000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Booking has core properties", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res).to.have.property("status");
+          pm.expect(res).to.have.property("train");
+          pm.expect(res).to.have.property("passengers");
+          pm.expect(res).to.have.property("totalAmount");
+          pm.expect(res).to.have.property("currency");
+          pm.expect(res).to.have.property("createdAt");
+      });
+
+      pm.test("Train has expected fields", () => {
+          const res = pm.response.json();
+          pm.expect(res.train).to.have.property("trainId");
+          pm.expect(res.train).to.have.property("operator");
+          pm.expect(res.train).to.have.property("from");
+          pm.expect(res.train).to.have.property("to");
+          pm.expect(res.train).to.have.property("date");
+      });
+
+      pm.test("Passengers have seat assignments", () => {
+          const res = pm.response.json();
+          pm.expect(res.passengers).to.be.an("array");
+          res.passengers.forEach(p => {
+              pm.expect(p).to.have.property("passenger");
+              pm.expect(p).to.have.property("seat");
+              pm.expect(p).to.have.property("price");
+          });
+      });
+    language: text/javascript

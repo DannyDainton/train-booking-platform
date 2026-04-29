@@ -14,3 +14,37 @@ body:
         "expiryDate": "12/28",
         "cvv": "123"
     }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Booking status is confirmed", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("confirmed");
+      });
+
+      pm.test("Booking has payment details", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("payment");
+          pm.expect(res.payment).to.have.property("transactionId");
+          pm.expect(res.payment.transactionId).to.match(/^TXN-/);
+          pm.expect(res.payment).to.have.property("status");
+      });
+
+      pm.test("Card number is masked to last 4 digits", () => {
+          const res = pm.response.json();
+          pm.expect(res.payment).to.have.property("cardLast4");
+          pm.expect(res.payment.cardLast4).to.eql("4242");
+          pm.expect(res.payment.cardHolder).to.eql("Alice Smith");
+      });
+
+      pm.test("Sensitive card details are not leaked", () => {
+          const body = pm.response.text();
+          pm.expect(body).to.not.include("4242424242424242");
+          pm.expect(body).to.not.include("cvv");
+          pm.expect(body).to.not.include("expiryDate");
+      });
+    language: text/javascript

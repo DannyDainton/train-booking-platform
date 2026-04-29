@@ -6,3 +6,45 @@ order: 2000
 description: |-
   Get weather for a destination on a specific travel date. The date is used as
   part of the cache key on the Weather Service side.
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has core weather properties", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("city");
+          pm.expect(res).to.have.property("observedAt");
+          pm.expect(res).to.have.property("conditions");
+          pm.expect(res).to.have.property("temperature");
+          pm.expect(res).to.have.property("wind");
+          pm.expect(res).to.have.property("travelAdvisory");
+          pm.expect(res).to.have.property("cached");
+      });
+
+      pm.test("Conditions category is a known value", () => {
+          const res = pm.response.json();
+          pm.expect(res.conditions.category).to.be.oneOf([
+              "severe", "wet", "reduced_visibility", "cloudy", "clear", "unknown"
+          ]);
+      });
+
+      pm.test("travelAdvisory has a valid level", () => {
+          const res = pm.response.json();
+          pm.expect(res.travelAdvisory.level).to.be.oneOf(["ok", "advice", "warning"]);
+          pm.expect(res.travelAdvisory.message).to.be.a("string");
+      });
+
+      pm.test("Temperature and wind units are set", () => {
+          const res = pm.response.json();
+          pm.expect(res.temperature.unit).to.eql("C");
+          pm.expect(res.wind.unit).to.eql("m/s");
+      });
+
+      pm.test("cached flag is a boolean", () => {
+          const res = pm.response.json();
+          pm.expect(res.cached).to.be.a("boolean");
+      });
+    language: text/javascript

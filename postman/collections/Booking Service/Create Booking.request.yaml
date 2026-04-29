@@ -20,3 +20,46 @@ body:
             }
         ]
     }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Booking has a bookingRef", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res.bookingRef).to.match(/^BR-/);
+      });
+
+      pm.test("Booking status is pending_payment", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("pending_payment");
+      });
+
+      pm.test("Booking echoes train and seatClass", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("train");
+          pm.expect(res.train.trainId).to.eql("T100");
+          pm.expect(res.seatClass).to.eql("first");
+      });
+
+      pm.test("Passengers have assigned seats and prices", () => {
+          const res = pm.response.json();
+          pm.expect(res.passengers).to.be.an("array").with.lengthOf(2);
+          res.passengers.forEach(p => {
+              pm.expect(p).to.have.property("passenger");
+              pm.expect(p).to.have.property("seatClass");
+              pm.expect(p).to.have.property("seat");
+              pm.expect(p).to.have.property("price");
+          });
+      });
+
+      pm.test("totalAmount and currency are present", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("totalAmount");
+          pm.expect(res.totalAmount).to.be.a("number");
+          pm.expect(res.currency).to.eql("GBP");
+      });
+    language: text/javascript

@@ -30,3 +30,43 @@ body:
             "currency": "GBP"
         }
     }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Notification has an ID with NTF- prefix", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("notificationId");
+          pm.expect(res.notificationId).to.match(/^NTF-/);
+      });
+
+      pm.test("Notification echoes request fields", () => {
+          const res = pm.response.json();
+          pm.expect(res.type).to.eql("booking_confirmation");
+          pm.expect(res.recipient).to.eql("Alice Smith");
+          pm.expect(res.bookingRef).to.eql("BR-TEST0001");
+      });
+
+      pm.test("Status is sent and createdAt is present", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("sent");
+          pm.expect(res).to.have.property("createdAt");
+      });
+
+      pm.test("Default message was generated", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("message");
+          pm.expect(res.message).to.be.a("string").and.not.empty;
+      });
+
+      pm.test("Details are preserved", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("details");
+          pm.expect(res.details).to.have.property("train");
+          pm.expect(res.details.totalAmount).to.eql(90);
+          pm.expect(res.details.currency).to.eql("GBP");
+      });
+    language: text/javascript

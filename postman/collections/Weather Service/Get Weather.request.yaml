@@ -6,3 +6,56 @@ order: 1000
 description: |-
   Returns normalised weather data for a given city. Calls the upstream OpenWeather API.
   Optional `date` query parameter (currently passed through for cache keying).
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has core weather properties", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("city");
+          pm.expect(res).to.have.property("observedAt");
+          pm.expect(res).to.have.property("conditions");
+          pm.expect(res).to.have.property("temperature");
+          pm.expect(res).to.have.property("wind");
+          pm.expect(res).to.have.property("travelAdvisory");
+          pm.expect(res).to.have.property("cached");
+      });
+
+      pm.test("Conditions has summary, description, and category", () => {
+          const res = pm.response.json();
+          pm.expect(res.conditions).to.have.property("summary");
+          pm.expect(res.conditions).to.have.property("description");
+          pm.expect(res.conditions).to.have.property("category");
+          pm.expect(res.conditions.category).to.be.oneOf([
+              "severe", "wet", "reduced_visibility", "cloudy", "clear", "unknown"
+          ]);
+      });
+
+      pm.test("Temperature has expected unit", () => {
+          const res = pm.response.json();
+          pm.expect(res.temperature).to.have.property("current");
+          pm.expect(res.temperature).to.have.property("feelsLike");
+          pm.expect(res.temperature.unit).to.eql("C");
+      });
+
+      pm.test("Wind has expected unit", () => {
+          const res = pm.response.json();
+          pm.expect(res.wind).to.have.property("speed");
+          pm.expect(res.wind.unit).to.eql("m/s");
+      });
+
+      pm.test("travelAdvisory has a valid level", () => {
+          const res = pm.response.json();
+          pm.expect(res.travelAdvisory).to.have.property("level");
+          pm.expect(res.travelAdvisory).to.have.property("message");
+          pm.expect(res.travelAdvisory.level).to.be.oneOf(["ok", "advice", "warning"]);
+      });
+
+      pm.test("cached flag is a boolean", () => {
+          const res = pm.response.json();
+          pm.expect(res.cached).to.be.a("boolean");
+      });
+    language: text/javascript

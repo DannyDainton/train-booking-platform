@@ -3,3 +3,20 @@ name: Health Check
 method: GET
 url: '{{baseUrl}}/ping'
 order: 3000
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Service reports ok status", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("ok");
+      });
+
+      pm.test("Service name is notification", () => {
+          const res = pm.response.json();
+          pm.expect(res.service).to.eql("notification");
+      });
+    language: text/javascript

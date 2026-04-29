@@ -17,6 +17,43 @@ queryParams:
 scripts:
   - type: afterResponse
     code: |-
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has count and results", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("count");
+          pm.expect(res).to.have.property("results");
+          pm.expect(res.results).to.be.an("array");
+          pm.expect(res.count).to.eql(res.results.length);
+      });
+
+      pm.test("Train results have required properties", () => {
+          const res = pm.response.json();
+          res.results.forEach(train => {
+              pm.expect(train).to.have.property("trainId");
+              pm.expect(train).to.have.property("operator");
+              pm.expect(train).to.have.property("from");
+              pm.expect(train).to.have.property("to");
+              pm.expect(train).to.have.property("date");
+              pm.expect(train).to.have.property("departure");
+              pm.expect(train).to.have.property("arrival");
+              pm.expect(train).to.have.property("duration");
+              pm.expect(train).to.have.property("seats");
+              pm.expect(train.seats).to.have.property("standard");
+              pm.expect(train.seats).to.have.property("firstClass");
+          });
+      });
+
+      pm.test("Results match the from/to search query", () => {
+          const res = pm.response.json();
+          res.results.forEach(train => {
+              pm.expect(train.from.toLowerCase()).to.include("london");
+              pm.expect(train.to.toLowerCase()).to.include("edinburgh");
+          });
+      });
+
       const res = pm.response.json();
 
       if (res.results && res.results.length > 0) {

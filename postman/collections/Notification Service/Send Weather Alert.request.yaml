@@ -46,3 +46,45 @@ body:
             }
         }
     }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Notification is a weather_alert", () => {
+          const res = pm.response.json();
+          pm.expect(res.type).to.eql("weather_alert");
+      });
+
+      pm.test("Notification has an ID with NTF- prefix", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("notificationId");
+          pm.expect(res.notificationId).to.match(/^NTF-/);
+      });
+
+      pm.test("Recipient and bookingRef are echoed", () => {
+          const res = pm.response.json();
+          pm.expect(res.recipient).to.eql("Alice Smith");
+          pm.expect(res.bookingRef).to.eql("BR-TEST0001");
+      });
+
+      pm.test("Custom message is preserved", () => {
+          const res = pm.response.json();
+          pm.expect(res.message).to.include("Weather alert for Manchester");
+      });
+
+      pm.test("Weather details are preserved", () => {
+          const res = pm.response.json();
+          pm.expect(res.details).to.have.property("destination", "Manchester");
+          pm.expect(res.details.conditions.category).to.eql("severe");
+          pm.expect(res.details.travelAdvisory.level).to.eql("warning");
+          pm.expect(res.details).to.have.property("train");
+      });
+
+      pm.test("Status is sent", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("sent");
+      });
+    language: text/javascript

@@ -14,3 +14,34 @@ body:
       "currency": "GBP",
       "bookingRef": "BR-TEST0001"
     }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", () => {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Payment has a transactionId with TXN- prefix", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("transactionId");
+          pm.expect(res.transactionId).to.match(/^TXN-/);
+      });
+
+      pm.test("Payment status is confirmed", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.eql("confirmed");
+      });
+
+      pm.test("Payment echoes amount, currency, and bookingRef", () => {
+          const res = pm.response.json();
+          pm.expect(res.amount).to.eql(45);
+          pm.expect(res.currency).to.eql("GBP");
+          pm.expect(res.bookingRef).to.eql("BR-TEST0001");
+      });
+
+      pm.test("createdAt is an ISO timestamp", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("createdAt");
+          pm.expect(new Date(res.createdAt).toString()).to.not.eql("Invalid Date");
+      });
+    language: text/javascript
