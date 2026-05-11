@@ -1,0 +1,51 @@
+$kind: http-request
+name: Refund Payment
+method: POST
+url: '{{baseUrl}}/payments/{{transactionId}}/refund'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Customer requested refund due to itinerary change"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const res = pm.response.json();
+      const expectedTransactionId = pm.collectionVariables.get("transactionId");
+      const expectedRefundReason = "Customer requested refund due to itinerary change";
+
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Payment status is refunded", () => {
+          pm.expect(res.status).to.eql("refunded");
+      });
+
+      pm.test("transactionId matches collection variable", () => {
+          pm.expect(res.transactionId).to.eql(expectedTransactionId);
+      });
+
+      pm.test("refundReason matches request body", () => {
+          pm.expect(res.refundReason).to.eql(expectedRefundReason);
+      });
+
+      pm.test("refundedAt is a valid ISO timestamp", () => {
+          pm.expect(res).to.have.property("refundedAt");
+          pm.expect(res.refundedAt).to.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+          pm.expect(new Date(res.refundedAt).toString()).to.not.eql("Invalid Date");
+      });
+
+      pm.test("Original payment fields remain present", () => {
+          pm.expect(res).to.have.property("transactionId");
+          pm.expect(res).to.have.property("bookingRef");
+          pm.expect(res).to.have.property("amount");
+          pm.expect(res).to.have.property("currency");
+          pm.expect(res).to.have.property("createdAt");
+      });
+    language: text/javascript

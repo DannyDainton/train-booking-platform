@@ -38,6 +38,25 @@ app.post('/payments', (req, res) => {
   res.status(201).json(payment);
 });
 
+// Refund a payment by transaction ID
+app.post('/payments/:transactionId/refund', (req, res) => {
+  const payment = payments.get(req.params.transactionId);
+
+  if (!payment) {
+    return res.status(404).json({ error: `Payment "${req.params.transactionId}" not found` });
+  }
+
+  if (payment.status === 'refunded') {
+    return res.status(409).json({ error: `Payment "${req.params.transactionId}" has already been refunded` });
+  }
+
+  payment.status = 'refunded';
+  payment.refundReason = req.body?.reason || 'Customer requested refund';
+  payment.refundedAt = new Date().toISOString();
+
+  res.json(payment);
+});
+
 // Look up a payment by transaction ID
 app.get('/payments/:transactionId', (req, res) => {
   const payment = payments.get(req.params.transactionId);

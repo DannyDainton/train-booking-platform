@@ -2,7 +2,7 @@ $kind: http-request
 name: Health Check
 method: GET
 url: '{{baseUrl}}/ping'
-order: 3000
+order: 4000
 scripts:
   - type: afterResponse
     code: |-
