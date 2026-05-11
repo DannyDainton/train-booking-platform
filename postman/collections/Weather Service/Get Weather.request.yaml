@@ -58,4 +58,316 @@ scripts:
           const res = pm.response.json();
           pm.expect(res.cached).to.be.a("boolean");
       });
+
+      // ---------- Visualizer (BBC Ceefax style) ----------
+      const data = pm.response.json();
+
+      const template = `
+      <style>
+          * { box-sizing: border-box; }
+          @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+          html, body { margin: 0; padding: 0; background: #000;
+              font-family: 'VT323', 'Courier New', monospace;
+              -webkit-font-smoothing: none; font-smooth: never;
+              image-rendering: pixelated; }
+
+          /* CRT scanlines + flicker */
+          .scene { position: relative; min-height: 100vh; padding: 24px 12px;
+              display: flex; align-items: flex-start; justify-content: center;
+              background: #000; overflow: hidden; }
+          .scene::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+              background: repeating-linear-gradient(to bottom,
+                  rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+                  rgba(0,0,0,0.25) 3px, rgba(0,0,0,0.25) 4px);
+              z-index: 999; }
+          .scene::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+              background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%);
+              z-index: 998; animation: flicker 6s steps(1) infinite; }
+          @keyframes flicker {
+              0%, 97%, 100% { opacity: 1; }
+              98% { opacity: 0.85; }
+              99% { opacity: 1; }
+          }
+
+          /* Ceefax page */
+          .page { position: relative; width: 100%; max-width: 720px;
+              background: #000; color: #fff;
+              font-family: 'VT323', 'Courier New', monospace;
+              font-size: 28px; line-height: 1.05; letter-spacing: 1px;
+              padding: 0; z-index: 1;
+              text-shadow: 0 0 2px rgba(255,255,255,0.4); }
+
+          /* Top header bar: BBC red + page number */
+          .topbar { display: flex; }
+          .topbar .red { background: #ff0000; color: #fff; padding: 4px 10px; font-weight: bold; }
+          .topbar .pageno { background: #000; color: #fff; padding: 4px 10px; }
+          .topbar .spacer { flex: 1; background: #000; }
+          .topbar .clock { background: #000; color: #fff; padding: 4px 10px; }
+
+          /* Title row: cyan "WEATHER" + yellow city */
+          .title-row { background: #000; padding: 6px 10px 2px; }
+          .title-row .cyan { color: #00ffff; }
+          .title-row .yellow { color: #ffff00; }
+          .title-row .white { color: #ffffff; }
+
+          /* Divider line of block characters */
+          .divider { padding: 0 10px; color: #ff0000; letter-spacing: 0; font-size: 28px; }
+
+          /* Main content rows */
+          .content { padding: 6px 10px; }
+          .row { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 6px; }
+          .label-cyan { color: #00ffff; min-width: 200px; }
+          .label-green { color: #00ff00; min-width: 200px; }
+          .label-yellow { color: #ffff00; min-width: 200px; }
+          .val-white { color: #ffffff; }
+          .val-yellow { color: #ffff00; }
+          .val-cyan { color: #00ffff; }
+          .val-green { color: #00ff00; }
+
+          /* Big temperature block - ASCII art style */
+          .temp-box { display: inline-block; padding: 6px 14px;
+              background: #0000aa; color: #ffff00; font-size: 56px;
+              line-height: 1; margin: 8px 0; }
+
+          /* ASCII pixel weather symbol panel */
+          .symbol-panel { display: flex; gap: 14px; align-items: center;
+              padding: 10px; margin: 6px 0;
+              background: #000044; border-left: 6px solid #ffff00; }
+          .symbol { font-family: 'VT323', monospace; font-size: 24px;
+              line-height: 1.05; white-space: pre; color: #ffff00;
+              text-shadow: 0 0 3px #ffff00; }
+          .symbol.clear { color: #ffff00; animation: sunPulse 2s ease-in-out infinite; }
+          .symbol.cloudy { color: #ffffff; animation: cloudDrift 4s ease-in-out infinite; }
+          .symbol.wet { color: #00ffff; animation: rainShake 0.5s steps(2) infinite; }
+          .symbol.severe { color: #ff00ff; animation: stormFlash 1s steps(1) infinite; }
+          .symbol.reduced_visibility { color: #aaaaaa; animation: fogFade 3s ease-in-out infinite; }
+          .symbol.unknown { color: #ffffff; }
+          @keyframes sunPulse {
+              0%,100% { text-shadow: 0 0 3px #ffff00; }
+              50%     { text-shadow: 0 0 14px #ffff00, 0 0 22px #ff8800; }
+          }
+          @keyframes cloudDrift {
+              0%,100% { transform: translateX(-4px); }
+              50%     { transform: translateX(4px); }
+          }
+          @keyframes rainShake {
+              0%,100% { transform: translateY(0); }
+              50%     { transform: translateY(2px); }
+          }
+          @keyframes stormFlash {
+              0%, 80%, 100% { color: #ff00ff; text-shadow: 0 0 3px #ff00ff; }
+              90%           { color: #ffffff; text-shadow: 0 0 18px #ffffff; }
+          }
+          @keyframes fogFade {
+              0%,100% { opacity: 0.5; }
+              50%     { opacity: 1; }
+          }
+
+          .symbol-meta { display: flex; flex-direction: column; gap: 4px; }
+          .symbol-meta .summary { color: #ffff00; font-size: 32px; text-transform: uppercase; }
+          .symbol-meta .desc { color: #ffffff; font-size: 22px; text-transform: uppercase; opacity: 0.85; }
+
+          /* Advisory bar at bottom */
+          .advisory { padding: 8px 10px; margin-top: 8px;
+              font-size: 26px; text-transform: uppercase; }
+          .advisory.ok { background: #008800; color: #ffffff; }
+          .advisory.advice { background: #ffff00; color: #000000; }
+          .advisory.warning { background: #ff0000; color: #ffffff;
+              animation: warnFlash 1s steps(1) infinite; }
+          @keyframes warnFlash {
+              0%, 50%, 100% { background: #ff0000; color: #ffffff; }
+              50.01%, 99.99% { background: #ffffff; color: #ff0000; }
+          }
+          .advisory .lvl { font-weight: bold; margin-right: 10px; }
+
+          /* Footer nav row - classic teletext colour buttons */
+          .nav { display: flex; margin-top: 6px; font-size: 22px; }
+          .nav .btn { flex: 1; padding: 6px 8px; text-transform: uppercase;
+              text-align: left; }
+          .nav .btn.red { background: #ff0000; color: #ffffff; }
+          .nav .btn.green { background: #00aa00; color: #ffffff; }
+          .nav .btn.yellow { background: #ffff00; color: #000000; }
+          .nav .btn.cyan { background: #00aaaa; color: #ffffff; }
+
+          .footer-line { padding: 6px 10px; color: #00ff00; font-size: 22px;
+              border-top: 2px solid #00ff00; margin-top: 4px; }
+
+          .cached-tag { color: #ff00ff; margin-left: 10px; }
+      </style>
+
+      <div class="scene">
+        <div class="page">
+          <div class="topbar">
+            <div class="red">P102</div>
+            <div class="pageno">CEEFAX 102 Mon 05 May</div>
+            <div class="spacer"></div>
+            <div class="clock">{{clockTime}}</div>
+          </div>
+
+          <div class="title-row">
+            <span class="cyan">WEATHER</span> <span class="white">.....</span> <span class="yellow">{{cityUpper}}</span> <span class="white">{{countryUpper}}</span>
+          </div>
+
+          <div class="divider">████████████████████████████████████████████</div>
+
+          <div class="content">
+            <div class="row">
+              <div class="label-cyan">CONDITIONS</div>
+              <div class="val-yellow">{{summaryUpper}}</div>
+            </div>
+            <div class="row">
+              <div class="label-cyan">DETAIL</div>
+              <div class="val-white">{{descriptionUpper}}</div>
+            </div>
+
+            <div class="symbol-panel">
+              <div class="symbol {{category}}">{{symbolArt}}</div>
+              <div class="symbol-meta">
+                <div class="summary">{{summaryUpper}}</div>
+                <div class="desc">{{descriptionUpper}}</div>
+                <div class="temp-box">{{currentTemp}}&deg;{{tempUnit}}</div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="label-green">FEELS LIKE</div>
+              <div class="val-white">{{feelsLike}}&deg;{{tempUnit}}</div>
+            </div>
+            <div class="row">
+              <div class="label-green">MIN / MAX</div>
+              <div class="val-white">{{minTemp}}&deg; / <span class="val-yellow">{{maxTemp}}&deg;</span></div>
+            </div>
+            <div class="row">
+              <div class="label-green">WIND</div>
+              <div class="val-white">{{windSpeed}} {{windUnit}} - <span class="val-cyan">{{windDescription}}</span></div>
+            </div>
+            <div class="row">
+              <div class="label-green">HUMIDITY</div>
+              <div class="val-white">{{humidity}}% - <span class="val-cyan">{{humidityLabel}}</span></div>
+            </div>
+            <div class="row">
+              <div class="label-yellow">OBSERVED</div>
+              <div class="val-white">{{observedAt}}<span class="cached-tag">{{cachedTag}}</span></div>
+            </div>
+          </div>
+
+          <div class="divider">████████████████████████████████████████████</div>
+
+          <div class="advisory {{advisoryLevel}}">
+            <span class="lvl">{{advisoryLabel}}:</span>{{advisoryMessage}}
+          </div>
+
+          <div class="nav">
+            <div class="btn red">FORECAST</div>
+            <div class="btn green">UK MAP</div>
+            <div class="btn yellow">TRAVEL</div>
+            <div class="btn cyan">INDEX</div>
+          </div>
+
+          <div class="footer-line">
+            BBC CEEFAX 102 - WEATHER {{cityUpper}}
+          </div>
+        </div>
+      </div>
+      `;
+
+      // Ceefax ASCII pixel art weather symbols
+      const symbolArt = {
+          clear: [
+              "    \\   |   /    ",
+              "     .-\"\"\"-.     ",
+              "  -- /     \\ --  ",
+              "    |  ###  |    ",
+              "  -- \\     / --  ",
+              "     '-...-'     ",
+              "    /   |   \\    "
+          ].join("\n"),
+          cloudy: [
+              "                 ",
+              "    .--.         ",
+              " .-(    ).       ",
+              "(___.__)__)      ",
+              "                 ",
+              "                 "
+          ].join("\n"),
+          wet: [
+              "    .--.         ",
+              " .-(    ).       ",
+              "(___.__)__)      ",
+              "  ' ' ' ' '      ",
+              " ' ' ' ' '       ",
+              "  ' ' ' ' '      "
+          ].join("\n"),
+          reduced_visibility: [
+              "                 ",
+              "  _ _ _ _ _ _    ",
+              " _ _ _ _ _ _ _   ",
+              "  _ _ _ _ _ _    ",
+              " _ _ _ _ _ _ _   ",
+              "  _ _ _ _ _ _    "
+          ].join("\n"),
+          severe: [
+              "    .--.         ",
+              " .-(    ).       ",
+              "(___.__)__)      ",
+              "   /_ ZZZ        ",
+              "    /_           ",
+              "   '  ' '        "
+          ].join("\n"),
+          unknown: [
+              "    ?????        ",
+              "   ?     ?       ",
+              "         ?       ",
+              "        ?        ",
+              "                 ",
+              "        ?        "
+          ].join("\n")
+      };
+
+      const advisoryLabels = { ok: "OK", advice: "ADVICE", warning: "WARNING" };
+
+      const humidityLabel = (h) => h < 30 ? "DRY" : h < 60 ? "COMFORTABLE" : h < 80 ? "HUMID" : "VERY HUMID";
+      const windDescription = (s) => s < 1.5 ? "CALM" : s < 5.5 ? "LIGHT BREEZE" : s < 10.7 ? "FRESH BREEZE" : s < 17.2 ? "STRONG WIND" : "GALE";
+
+      const obsDate = new Date(data.observedAt);
+      const observed = obsDate.toLocaleString(undefined, {
+          weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+      }).toUpperCase();
+
+      // Build a Ceefax-style page header date (e.g. "Mon 05 May")
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const clockTime = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+
+      const cat = data.conditions.category;
+
+      pm.visualizer.set(template, {
+          city: data.city,
+          cityUpper: (data.city || "").toUpperCase(),
+          country: data.country || "",
+          countryUpper: (data.country || "").toUpperCase(),
+          observedAt: observed,
+          clockTime: clockTime,
+          cachedTag: data.cached ? " [CACHED]" : "",
+          currentTemp: Math.round(data.temperature.current),
+          feelsLike: Math.round(data.temperature.feelsLike),
+          minTemp: Math.round(data.temperature.min),
+          maxTemp: Math.round(data.temperature.max),
+          tempUnit: data.temperature.unit,
+          summary: data.conditions.summary,
+          summaryUpper: (data.conditions.summary || "").toUpperCase(),
+          description: data.conditions.description,
+          descriptionUpper: (data.conditions.description || "").toUpperCase(),
+          category: cat,
+          symbolArt: symbolArt[cat] || symbolArt.unknown,
+          windSpeed: data.wind.speed,
+          windUnit: (data.wind.unit || "").toUpperCase(),
+          windDescription: windDescription(data.wind.speed),
+          humidity: data.humidity,
+          humidityLabel: humidityLabel(data.humidity),
+          advisoryLevel: data.travelAdvisory.level,
+          advisoryLabel: advisoryLabels[data.travelAdvisory.level] || "INFO",
+          advisoryMessage: (data.travelAdvisory.message || "").toUpperCase()
+      });
     language: text/javascript
