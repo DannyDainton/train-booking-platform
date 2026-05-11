@@ -9,7 +9,9 @@ A small Node.js microservices project for a train booking system. Five Express s
 │   Booking Service    │  :3000  (main API)
 │                      │
 │  GET  /search        │──────▶  Schedule Service  :3001
-│  POST /bookings      │──────▶  Schedule + Payment + Notification
+│  POST /bookings      │──────▶  Schedule Service  :3001
+│  POST /bookings/:ref/pay    ▶  Payment + Notification + Weather
+│  POST /bookings/:ref/refund ▶  Payment Service  :3002
 │  GET  /bookings/:ref │
 └──────────────────────┘
                                   ┌─────────────────────┐
@@ -146,6 +148,22 @@ curl -X POST http://localhost:3000/bookings \
   }'
 ```
 
+### Pay for a booking
+
+```bash
+curl -X POST http://localhost:3000/bookings/BR-XXXXXXXX/pay \
+  -H "Content-Type: application/json" \
+  -d '{ "cardNumber": "4242424242424242", "cardHolder": "Alice Smith", "expiryDate": "12/28", "cvv": "123" }'
+```
+
+### Refund a booking
+
+```bash
+curl -X POST http://localhost:3000/bookings/BR-XXXXXXXX/refund \
+  -H "Content-Type: application/json" \
+  -d '{ "reason": "Customer requested refund" }'
+```
+
 ### Get a booking
 
 ```bash
@@ -188,6 +206,9 @@ curl http://localhost:3001/schedules/T200
 curl -X POST http://localhost:3002/payments \
   -H "Content-Type: application/json" \
   -d '{ "amount": 45, "currency": "GBP", "bookingRef": "BR-TEST0001" }'
+curl -X POST http://localhost:3002/payments/TXN-XXXXXXXX/refund \
+  -H "Content-Type: application/json" \
+  -d '{ "reason": "Customer requested refund" }'
 
 # Notifications
 curl -X POST http://localhost:3003/notifications \

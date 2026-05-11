@@ -1,0 +1,73 @@
+$kind: http-request
+name: 5 - Refund Booking (Edinburgh to London)
+method: POST
+url: '{{baseUrl}}/bookings/{{edinBookingRef}}/refund'
+order: 8500
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+        "reason": "Customer requested refund"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const expectedReason = "Customer requested refund";
+
+      pm.test("Status code is 200", () => {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Booking status is refunded", () => {
+          const res = pm.response.json();
+          pm.expect(res.status).to.equal("refunded");
+      });
+
+      pm.test("Payment status is refunded", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("payment");
+          pm.expect(res.payment.status).to.equal("refunded");
+      });
+
+      pm.test("Booking ref matches the requested booking", () => {
+          const res = pm.response.json();
+          const expectedRef = pm.collectionVariables.get("edinBookingRef");
+          pm.expect(res.bookingRef).to.equal(expectedRef);
+      });
+
+      pm.test("Refund reason is present", () => {
+          const res = pm.response.json();
+          pm.expect(res.payment.refundReason).to.equal(expectedReason);
+      });
+
+      pm.test("Refunded timestamps are valid", () => {
+          const res = pm.response.json();
+          pm.expect(res).to.have.property("refundedAt");
+          pm.expect(res.payment).to.have.property("refundedAt");
+          pm.expect(new Date(res.refundedAt).toString()).to.not.equal("Invalid Date");
+          pm.expect(new Date(res.payment.refundedAt).toString()).to.not.equal("Invalid Date");
+          pm.expect(res.payment.refundedAt).to.equal(res.refundedAt);
+      });
+
+      pm.test("Transaction ID is still present and matches payment step", () => {
+          const res = pm.response.json();
+          const expectedTxn = pm.collectionVariables.get("edinTransactionId");
+          pm.expect(res.payment).to.have.property("transactionId");
+          pm.expect(res.payment.transactionId).to.match(/^TXN-/);
+          pm.expect(res.payment.transactionId).to.equal(expectedTxn);
+      });
+
+      pm.test("Sensitive card details are not exposed", () => {
+          const res = pm.response.json();
+          const body = pm.response.text();
+          pm.expect(res.payment).to.not.have.property("cardNumber");
+          pm.expect(res.payment).to.not.have.property("cvv");
+          pm.expect(res.payment).to.not.have.property("expiryDate");
+          pm.expect(body).to.not.include("4242424242424242");
+          pm.expect(body).to.not.include("cvv");
+          pm.expect(body).to.not.include("expiryDate");
+      });
+    language: text/javascript

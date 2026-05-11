@@ -25,6 +25,7 @@ scripts:
           const res = pm.response.json();
           pm.expect(res).to.have.property("transactionId");
           pm.expect(res.transactionId).to.match(/^TXN-/);
+          pm.collectionVariables.set("transactionId", res.transactionId);
       });
 
       pm.test("Payment status is confirmed", () => {

@@ -66,6 +66,49 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // @endpoint POST /payments/:transactionId/refund
+  const refundMatch = pathname.match(/^\/payments\/([^/]+)\/refund$/);
+  if (method === "POST" && refundMatch) {
+    const transactionId = decodeURIComponent(refundMatch[1]);
+
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      let parsed = {};
+      if (body.trim()) {
+        try {
+          parsed = JSON.parse(body);
+        } catch (e) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+          return;
+        }
+      }
+
+      const payment = payments.get(transactionId);
+
+      if (!payment) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: `Payment "${transactionId}" not found` }));
+        return;
+      }
+
+      if (payment.status === "refunded") {
+        res.writeHead(409, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: `Payment "${transactionId}" has already been refunded` }));
+        return;
+      }
+
+      payment.status = "refunded";
+      payment.refundReason = parsed.reason || "Customer requested refund";
+      payment.refundedAt = new Date().toISOString();
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(payment));
+    });
+    return;
+  }
+
   // @endpoint GET /payments/:transactionId
   const paymentsMatch = pathname.match(/^\/payments\/([^/]+)$/);
   if (method === "GET" && paymentsMatch) {

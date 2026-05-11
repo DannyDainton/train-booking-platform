@@ -303,6 +303,93 @@ app.post('/bookings/:bookingRef/pay', async (req, res) => {
   }
 });
 
+// Refund a booking
+app.post('/bookings/:bookingRef/refund', async (req, res) => {
+  const { bookingRef } = req.params;
+  const { reason = 'Customer requested refund' } = req.body || {};
+  const booking = bookings.get(bookingRef);
+
+  if (!booking) {
+    log('warn', 'refund booking not found', { bookingRef });
+    return res.status(404).json({ error: `Booking "${bookingRef}" not found` });
+  }
+
+  if (booking.status === 'refunded') {
+    log('warn', 'refund booking already refunded', { bookingRef });
+    return res.status(409).json({ error: 'Booking has already been refunded' });
+  }
+
+  if (booking.status !== 'confirmed') {
+    log('warn', 'refund booking invalid state', { bookingRef, status: booking.status });
+    return res.status(400).json({ error: 'Booking is not in a refundable state' });
+  }
+
+  if (!booking.payment || !booking.payment.transactionId) {
+    log('warn', 'refund booking rejected: missing payment transaction', { bookingRef });
+    return res.status(400).json({ error: 'Booking does not have a payment transaction to refund' });
+  }
+
+  try {
+    const transactionId = booking.payment.transactionId;
+    const refundUrl = `${config.paymentServiceUrl}/payments/${encodeURIComponent(transactionId)}/refund`;
+    log('info', 'calling payment service', {
+      reason: 'refund payment for booking',
+      method: 'POST',
+      url: refundUrl,
+      bookingRef,
+      transactionId,
+    });
+
+    const refundRes = await fetch(refundUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+
+    if (!refundRes.ok) {
+      const body = await refundRes.json().catch(() => ({}));
+      log('warn', 'payment refund failed', { bookingRef, transactionId, status: refundRes.status });
+      return res.status(refundRes.status).json({
+        error: 'Payment refund failed',
+        details: body
+      });
+    }
+
+    const payment = await refundRes.json();
+    log('info', 'payment refund responded', {
+      bookingRef,
+      httpStatus: refundRes.status,
+      transactionId: payment.transactionId,
+    });
+
+    booking.status = 'refunded';
+    booking.payment = {
+      ...booking.payment,
+      status: payment.status,
+      refundReason: payment.refundReason,
+      refundedAt: payment.refundedAt
+    };
+    booking.refundedAt = payment.refundedAt;
+
+    log('info', 'booking refunded', {
+      bookingRef,
+      transactionId: payment.transactionId,
+    });
+
+    res.json(booking);
+  } catch (err) {
+    log('error', 'payment service unreachable during refund', {
+      bookingRef,
+      message: err.message,
+    });
+    res.status(502).json({
+      error: 'Payment service is unavailable',
+      service: 'payment',
+      message: err.message,
+    });
+  }
+});
+
 // Get a booking by reference (optionally enriched with destination weather)
 app.get('/bookings/:bookingRef', async (req, res) => {
   const booking = bookings.get(req.params.bookingRef);
