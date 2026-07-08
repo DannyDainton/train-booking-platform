@@ -131,7 +131,7 @@ Your `.env` stays untouched — stop the script and you're back to the real depe
 ### Search for trains
 
 ```bash
-curl "http://localhost:3000/search?from=London&to=Manchester&date=2026-04-01"
+curl "http://localhost:3000/search?from=London&to=Manchester&date=2026-07-08"
 ```
 
 ### Create a booking
