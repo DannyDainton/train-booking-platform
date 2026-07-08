@@ -1,4 +1,6 @@
+id: 019e836d-1864-7741-8ce1-e78eb1cbabb1
 simulation: OpenWeather Faults
+routing: header
 mocks:
   - file: ../mocks/openweather-mock.js
     scenarios:

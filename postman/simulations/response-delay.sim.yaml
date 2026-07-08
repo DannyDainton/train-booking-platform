@@ -1,10 +1,13 @@
+id: 019e836d-1863-7768-b30a-5a0ecc301bf0
 simulation: Response Delay
+routing: header
 mocks:
   - file: ../mocks/notification-mock.js
     scenarios:
       - type: latency
         config:
           delay_ms: 2000
+  - file: ../mocks/openweather-mock.js
   - file: ../mocks/payment-mock.js
     scenarios:
       - type: latency

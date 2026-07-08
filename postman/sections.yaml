@@ -1,0 +1,43 @@
+panels:
+  - name: collections
+    panelType: 1
+    items:
+      - relativePath: postman/collections/Booking E2E Flow
+        elementType: collection
+      - relativePath: postman/collections/Booking Service
+        elementType: collection
+      - relativePath: postman/collections/Notification Service
+        elementType: collection
+      - relativePath: postman/collections/Payment Service
+        elementType: collection
+      - relativePath: postman/collections/Schedule Service
+        elementType: collection
+      - relativePath: postman/collections/Weather Service
+        elementType: collection
+  - name: environments
+    panelType: 1
+    items:
+      - relativePath: postman/environments/Booking Platform Environment.environment.yaml
+        elementType: environment
+  - name: docs
+    panelType: 1
+    items:
+      - relativePath: README.md
+        elementType: doc
+  - name: uncategorized
+    panelType: 1
+    isUncategorized: true
+  - name: mocks
+    panelType: 2
+    items:
+      - relativePath: postman/mocks/notification-mock.json
+        elementType: mock
+      - relativePath: postman/mocks/openweather-mock.json
+        elementType: mock
+      - relativePath: postman/mocks/payment-mock.json
+        elementType: mock
+      - relativePath: postman/mocks/schedule-mock.json
+        elementType: mock
+  - name: uncategorized
+    panelType: 2
+    isUncategorized: true
