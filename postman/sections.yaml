@@ -21,23 +21,27 @@ panels:
         elementType: environment
   - name: docs
     panelType: 1
-    items:
-      - relativePath: README.md
-        elementType: doc
   - name: uncategorized
     panelType: 1
     isUncategorized: true
-  - name: mocks
-    panelType: 2
     items:
       - relativePath: postman/mocks/notification-mock.json
-        elementType: mock
+        elementType: codeMock
       - relativePath: postman/mocks/openweather-mock.json
-        elementType: mock
+        elementType: codeMock
       - relativePath: postman/mocks/payment-mock.json
-        elementType: mock
+        elementType: codeMock
       - relativePath: postman/mocks/schedule-mock.json
-        elementType: mock
+        elementType: codeMock
+  - name: mocks
+    panelType: 2
   - name: uncategorized
     panelType: 2
     isUncategorized: true
+    items:
+      - relativePath: postman/simulations/openweather-faults.sim.yaml
+        elementType: simulation
+      - relativePath: postman/simulations/response-delay.sim.yaml
+        elementType: simulation
+      - relativePath: postman/simulations/schedule-bad-request.sim.yaml
+        elementType: simulation

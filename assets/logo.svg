@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="200" viewBox="0 0 720 200" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Railyard - Train Booking Platform">
+	<defs>
+		<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#191d31" />
+			<stop offset="1" stop-color="#0f1220" />
+		</linearGradient>
+		<linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+			<stop offset="0" stop-color="#38bdf8" />
+			<stop offset="1" stop-color="#34d399" />
+		</linearGradient>
+	</defs>
+
+	<!-- Icon badge -->
+	<rect x="20" y="20" width="160" height="160" rx="34" fill="url(#bg)" stroke="#2c3350" stroke-width="2" />
+
+	<!-- Track -->
+	<rect x="46" y="150" width="108" height="7" rx="3.5" fill="#2c3350" />
+	<rect x="54" y="161" width="14" height="6" rx="2" fill="#2c3350" />
+	<rect x="93" y="161" width="14" height="6" rx="2" fill="#2c3350" />
+	<rect x="132" y="161" width="14" height="6" rx="2" fill="#2c3350" />
+
+	<!-- Train body -->
+	<path d="M70 52c0-8 6-14 14-14h32c8 0 14 6 14 14v58c0 6-5 11-11 11H81c-6 0-11-5-11-11V52Z" fill="url(#accent)" />
+	<!-- Windshield -->
+	<rect x="80" y="52" width="40" height="26" rx="8" fill="#0f1220" />
+	<!-- Headlights -->
+	<circle cx="86" cy="106" r="6" fill="#0f1220" />
+	<circle cx="114" cy="106" r="6" fill="#0f1220" />
+	<!-- Speed lines -->
+	<rect x="48" y="70" width="16" height="6" rx="3" fill="#38bdf8" opacity="0.7" />
+	<rect x="44" y="86" width="20" height="6" rx="3" fill="#38bdf8" opacity="0.45" />
+
+	<!-- Wordmark -->
+	<text x="210" y="98" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="52" font-weight="700" fill="#e7eaf3">Railyard</text>
+	<text x="212" y="136" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="21" font-weight="500" fill="#9aa3bd">Train Booking Platform</text>
+	<text x="212" y="164" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" fill="#38bdf8">microservices &#183; mocks &#183; live status</text>
+</svg>

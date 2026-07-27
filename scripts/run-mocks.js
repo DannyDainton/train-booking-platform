@@ -32,10 +32,10 @@ function stripAnsi(str) {
 
 const { result } = concurrently(
   [
-    { name: 'schedule-mock',     command: 'postman mock start postman/mocks/schedule-mock.json' },
-    { name: 'payment-mock',      command: 'postman mock start postman/mocks/payment-mock.json' },
-    { name: 'notification-mock', command: 'postman mock start postman/mocks/notification-mock.json' },
-    { name: 'openweather-mock',  command: 'postman mock start postman/mocks/openweather-mock.json' },
+    { name: 'schedule-mock',     command: 'postman mock run postman/mocks/schedule-mock.json' },
+    { name: 'payment-mock',      command: 'postman mock run postman/mocks/payment-mock.json' },
+    { name: 'notification-mock', command: 'postman mock run postman/mocks/notification-mock.json' },
+    { name: 'openweather-mock',  command: 'postman mock run postman/mocks/openweather-mock.json' },
   ],
   {
     prefix: 'name',

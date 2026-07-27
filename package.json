@@ -10,16 +10,17 @@
     "dev:mock:notification": "NOTIFICATION_SERVICE_URL=http://localhost:4503 npm run --silent dev",
     "dev:mock:openweather": "OPENWEATHER_API_URL=http://localhost:4504 npm run --silent dev",
     "dev:mock:all": "SCHEDULE_SERVICE_URL=http://localhost:4501 PAYMENT_SERVICE_URL=http://localhost:4502 NOTIFICATION_SERVICE_URL=http://localhost:4503 OPENWEATHER_API_URL=http://localhost:4504 npm run --silent dev",
-    "mocks:schedule": "postman mock start postman/mocks/schedule-mock.json",
-    "mocks:payment": "postman mock start postman/mocks/payment-mock.json",
-    "mocks:notification": "postman mock start postman/mocks/notification-mock.json",
-    "mocks:openweather": "postman mock start postman/mocks/openweather-mock.json",
+    "mocks:schedule": "postman mock run postman/mocks/schedule-mock.json",
+    "mocks:payment": "postman mock run postman/mocks/payment-mock.json",
+    "mocks:notification": "postman mock run postman/mocks/notification-mock.json",
+    "mocks:openweather": "postman mock run postman/mocks/openweather-mock.json",
     "mocks:start": "node scripts/run-mocks.js",
     "start:booking": "node services/booking/index.js",
     "start:schedule": "node services/schedule/index.js",
     "start:payment": "node services/payment/index.js",
     "start:notification": "node services/notification/index.js",
-    "start:weather": "node services/weather/index.js"
+    "start:weather": "node services/weather/index.js",
+    "start:status": "node services/status/index.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

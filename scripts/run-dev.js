@@ -40,10 +40,11 @@ const { result } = concurrently(
     { name: 'payment',      command: 'node services/payment/index.js',      env: { FORCE_COLOR: '1' } },
     { name: 'notification', command: 'node services/notification/index.js', env: { FORCE_COLOR: '1' } },
     { name: 'weather',      command: 'node services/weather/index.js',      env: { FORCE_COLOR: '1' } },
+    { name: 'status',       command: 'node services/status/index.js',       env: { FORCE_COLOR: '1' } },
   ],
   {
     prefix: 'name',
-    prefixColors: ['blue', 'green', 'yellow', 'magenta', 'cyan'],
+    prefixColors: ['blue', 'green', 'yellow', 'magenta', 'cyan', 'white'],
     outputStream: filteredStdout,
   }
 );
