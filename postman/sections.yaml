@@ -33,15 +33,10 @@ panels:
         elementType: codeMock
       - relativePath: postman/mocks/schedule-mock.json
         elementType: codeMock
+      - relativePath: README.md
+        elementType: document
   - name: mocks
     panelType: 2
   - name: uncategorized
     panelType: 2
     isUncategorized: true
-    items:
-      - relativePath: postman/simulations/openweather-faults.sim.yaml
-        elementType: simulation
-      - relativePath: postman/simulations/response-delay.sim.yaml
-        elementType: simulation
-      - relativePath: postman/simulations/schedule-bad-request.sim.yaml
-        elementType: simulation

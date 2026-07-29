@@ -1,7 +1,14 @@
-# Use this workspace to collaborate
 workspace:
   id: eaf46ed0-b81d-4f6a-a0ce-5a4d9d88c29a
 
 localResources:
   docs:
     - ../README.md
+  documents:
+    - ../README.md
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Booking E2E Flow: 1794236-504c0c21-4176-47d7-88ea-7984bb84e2d2

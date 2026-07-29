@@ -1,7 +1,9 @@
 $kind: http-request
 name: Get Weather
 method: GET
-url: '{{baseUrl}}/weather?city=Manchester'
+url: "{{baseUrl}}/weather?city=Manchester"
+queryParams:
+  city: Manchester
 order: 1000
 description: |-
   Returns normalised weather data for a given city. Calls the upstream OpenWeather API.
