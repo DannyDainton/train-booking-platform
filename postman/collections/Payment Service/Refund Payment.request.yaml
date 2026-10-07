@@ -1,5 +1,4 @@
 $kind: http-request
-name: Refund Payment
 method: POST
 url: '{{baseUrl}}/payments/{{transactionId}}/refund'
 order: 3000

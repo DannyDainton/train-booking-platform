@@ -1,5 +1,4 @@
 $kind: http-request
-name: Refund Booking
 method: POST
 url: '{{baseUrl}}/bookings/{{bookingRef}}/refund'
 order: 2750

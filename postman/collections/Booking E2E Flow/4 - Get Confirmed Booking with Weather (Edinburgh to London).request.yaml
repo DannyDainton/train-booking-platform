@@ -1,5 +1,4 @@
 $kind: http-request
-name: 4 - Get Confirmed Booking with Weather (Edinburgh to London)
 method: GET
 url: "{{baseUrl}}/bookings/{{edinBookingRef}}"
 order: 8000

@@ -1,5 +1,4 @@
 $kind: http-request
-name: 3 - Pay for Booking (Edinburgh to London)
 method: POST
 url: "{{baseUrl}}/bookings/{{edinBookingRef}}/pay"
 order: 7000

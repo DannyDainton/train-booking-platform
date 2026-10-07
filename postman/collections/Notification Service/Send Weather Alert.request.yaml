@@ -1,5 +1,4 @@
 $kind: http-request
-name: Send Weather Alert
 method: POST
 url: '{{baseUrl}}/notifications'
 order: 1500

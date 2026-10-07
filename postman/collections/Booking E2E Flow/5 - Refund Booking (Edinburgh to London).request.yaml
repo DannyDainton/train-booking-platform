@@ -1,5 +1,4 @@
 $kind: http-request
-name: 5 - Refund Booking (Edinburgh to London)
 method: POST
 url: '{{baseUrl}}/bookings/{{edinBookingRef}}/refund'
 order: 8500

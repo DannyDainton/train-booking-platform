@@ -2,8 +2,6 @@ workspace:
   id: eaf46ed0-b81d-4f6a-a0ce-5a4d9d88c29a
 
 localResources:
-  docs:
-    - ../README.md
   documents:
     - ../README.md
 

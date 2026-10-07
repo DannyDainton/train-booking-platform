@@ -1,5 +1,4 @@
 $kind: http-request
-name: 2 - Create Booking (Edinburgh to London)
 method: POST
 url: "{{baseUrl}}/bookings"
 order: 6000

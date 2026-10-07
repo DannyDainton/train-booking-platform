@@ -1,5 +1,4 @@
 $kind: http-request
-name: Get Payment
 method: GET
 url: '{{baseUrl}}/payments/{{transactionId}}'
 order: 2000

@@ -1,5 +1,4 @@
 $kind: http-request
-name: Pay for Booking
 method: POST
 url: '{{baseUrl}}/bookings/{{bookingRef}}/pay'
 order: 2500

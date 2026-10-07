@@ -1,0 +1,13 @@
+version: 1
+id: 9f591497-f0b8-45cc-bb95-d69dfd94f5ad
+name: Notification Service Mock
+protocol: http
+port: 4503
+autoRestartOnChange: true
+logging:
+  level: verbose
+  showBody: true
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true

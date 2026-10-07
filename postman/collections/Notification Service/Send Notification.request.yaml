@@ -1,5 +1,4 @@
 $kind: http-request
-name: Send Notification
 method: POST
 url: '{{baseUrl}}/notifications'
 order: 1000

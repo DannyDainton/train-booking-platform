@@ -1,7 +1,7 @@
 $kind: http-request
 name: Search Trains
 method: GET
-url: '{{baseUrl}}/schedules'
+url: '{{baseUrl}}/schedules?from=London&to=Edinburgh'
 order: 1000
 queryParams:
   - key: from

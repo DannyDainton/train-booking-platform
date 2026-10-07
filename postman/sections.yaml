@@ -25,16 +25,16 @@ panels:
     panelType: 1
     isUncategorized: true
     items:
-      - relativePath: postman/mocks/notification-mock.json
-        elementType: codeMock
-      - relativePath: postman/mocks/openweather-mock.json
-        elementType: codeMock
-      - relativePath: postman/mocks/payment-mock.json
-        elementType: codeMock
-      - relativePath: postman/mocks/schedule-mock.json
-        elementType: codeMock
       - relativePath: README.md
         elementType: document
+      - relativePath: postman/mocks/notification-mock/config.yaml
+        elementType: codeMock
+      - relativePath: postman/mocks/openweather-mock/config.yaml
+        elementType: codeMock
+      - relativePath: postman/mocks/payment-mock/config.yaml
+        elementType: codeMock
+      - relativePath: postman/mocks/schedule-mock/config.yaml
+        elementType: codeMock
   - name: mocks
     panelType: 2
   - name: uncategorized

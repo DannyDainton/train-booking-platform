@@ -1,0 +1,13 @@
+version: 1
+name: Payment Service Mock
+protocol: http
+port: 4502
+autoRestartOnChange: true
+logging:
+  level: verbose
+  showBody: true
+id: 019e2b56-d445-725b-a80a-a04c252a9b25
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true
