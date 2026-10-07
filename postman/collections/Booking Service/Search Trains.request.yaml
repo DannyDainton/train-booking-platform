@@ -9,7 +9,9 @@ queryParams:
   - key: to
     value: Manchester
   - key: date
-    value: '2026-07-08'
+    value: '2026-11-12'
+  - key: seatClass
+    value: first
 scripts:
   - type: afterResponse
     code: |-
@@ -53,6 +55,14 @@ scripts:
           res.results.forEach(train => {
               pm.expect(train.from.toLowerCase()).to.include("london");
               pm.expect(train.to.toLowerCase()).to.include("manchester");
+          });
+      });
+
+      pm.test("Results have first-class seats available", () => {
+          const res = pm.response.json();
+          res.results.forEach(train => {
+              pm.expect(train.seats).to.have.property("firstClass");
+              pm.expect(train.seats.firstClass.available).to.be.greaterThan(0);
           });
       });
     language: text/javascript

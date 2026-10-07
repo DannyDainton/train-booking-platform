@@ -29,16 +29,24 @@ const bookings = new Map();
 
 // Search for trains (proxies to Schedule Service)
 app.get('/search', async (req, res) => {
-  const { from, to, date } = req.query;
+  const { from, to, date, seatClass } = req.query;
 
   if (!from || !to) {
     log('warn', 'search rejected: missing from or to');
     return res.status(400).json({ error: 'Both "from" and "to" query parameters are required' });
   }
 
+  if (seatClass && seatClass !== 'standard' && seatClass !== 'first') {
+    log('warn', 'search rejected: invalid seatClass', { seatClass });
+    return res.status(400).json({
+      error: '"seatClass" must be "standard" or "first"'
+    });
+  }
+
   try {
     const params = new URLSearchParams({ from, to });
     if (date) params.set('date', date);
+    if (seatClass) params.set('seatClass', seatClass);
 
     const url = `${config.scheduleServiceUrl}/schedules?${params}`;
     const response = await fetch(url);
@@ -63,7 +71,7 @@ app.get('/search', async (req, res) => {
     } else if (data && typeof data.count === 'number') {
       resultCount = data.count;
     }
-    log('info', 'search ok', { from, to, resultCount });
+    log('info', 'search ok', { from, to, seatClass: seatClass || null, resultCount });
     res.json(data);
   } catch (err) {
     log('error', 'schedule service unreachable', { message: err.message, from, to });

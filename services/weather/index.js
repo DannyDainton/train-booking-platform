@@ -89,7 +89,7 @@ function buildTravelAdvisory(main, windSpeed) {
 
 // --- Routes ---
 
-// GET /weather?city=London[&date=2026-04-25]
+// GET /weather?city=London[&date=2026-11-12]
 app.get('/weather', async (req, res) => {
   const { city, date } = req.query;
 

@@ -18,7 +18,7 @@ body:
                 "operator": "Northern Rail",
                 "from": "London Euston",
                 "to": "Manchester Piccadilly",
-                "date": "2026-07-08",
+                "date": "2026-11-12",
                 "departure": "08:15",
                 "arrival": "10:25"
             },

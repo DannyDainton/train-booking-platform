@@ -1,7 +1,7 @@
 $kind: http-request
 name: Get Weather with Date
 method: GET
-url: '{{baseUrl}}/weather?city=Edinburgh&date=2026-04-25'
+url: '{{baseUrl}}/weather?city=Edinburgh&date=2026-11-12'
 order: 2000
 description: |-
   Get weather for a destination on a specific travel date. The date is used as

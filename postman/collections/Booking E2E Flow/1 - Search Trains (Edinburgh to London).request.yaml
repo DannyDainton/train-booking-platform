@@ -1,7 +1,7 @@
 $kind: http-request
 name: 1 - Search Trains (Edinburgh to London)
 method: GET
-url: "{{baseUrl}}/search?from=Edinburgh&to=London&date=2026-07-08"
+url: "{{baseUrl}}/search?from=Edinburgh&to=London&date=2026-11-12"
 order: 5000
 queryParams:
   - key: from
@@ -9,7 +9,7 @@ queryParams:
   - key: to
     value: London
   - key: date
-    value: 2026-07-08
+    value: 2026-11-12
 scripts:
   - type: afterResponse
     code: >-
