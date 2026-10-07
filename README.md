@@ -261,7 +261,7 @@ Copy `.env.example` to `.env`. The key variables:
 ### Search for trains
 
 ```bash
-curl "http://localhost:3000/search?from=London&to=Manchester&date=2026-07-08"
+curl "http://localhost:3000/search?from=London&to=Manchester&date=2026-11-12"
 ```
 
 ### Create a booking
